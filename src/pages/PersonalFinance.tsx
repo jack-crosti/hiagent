@@ -8,17 +8,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, TrendingUp, DollarSign, Plus, BarChart3 } from 'lucide-react';
+import { Target, TrendingUp, DollarSign, Plus, BarChart3, Pencil, Trash2 } from 'lucide-react';
 import { formatNZD, generateScenarios } from '@/services/commissionService';
 import { cn } from '@/lib/utils';
+import { DealDialog } from '@/components/deals/DealDialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PersonalFinancePage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [deals, setDeals] = useState<any[]>([]);
   const [goalPlan, setGoalPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingDeal, setEditingDeal] = useState<any>(null);
 
   useEffect(() => {
+    if (!user) return;
+    loadData();
+  }, [user]);
+
+  function loadData() {
     if (!user) return;
     Promise.all([
       supabase.from('deals').select('*').eq('owner_user_id', user.id).order('created_at', { ascending: false }),
@@ -28,7 +38,19 @@ export default function PersonalFinancePage() {
       setGoalPlan(goalRes.data);
       setLoading(false);
     });
-  }, [user]);
+  }
+
+  async function deleteDeal(id: string) {
+    await supabase.from('deals').delete().eq('id', id);
+    setDeals(prev => prev.filter(d => d.id !== id));
+    toast({ title: 'Deal deleted' });
+  }
+
+  async function closeDeal(id: string) {
+    await supabase.from('deals').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', id);
+    loadData();
+    toast({ title: 'Deal marked as closed' });
+  }
 
   const closedDeals = deals.filter(d => d.status === 'closed');
   const pipelineDeals = deals.filter(d => d.status === 'pipeline');
@@ -63,11 +85,18 @@ export default function PersonalFinancePage() {
         title="Personal Finance"
         description="Track your commission goals, pipeline, and scenarios"
         action={
-          <Button size="sm">
+          <Button size="sm" onClick={() => { setEditingDeal(null); setDialogOpen(true); }}>
             <Plus size={16} className="mr-1.5" />
             Add Deal
           </Button>
         }
+      />
+
+      <DealDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        deal={editingDeal}
+        onSaved={loadData}
       />
 
       {/* Goal Card */}
@@ -118,7 +147,7 @@ export default function PersonalFinancePage() {
               icon={TrendingUp}
               title="No deals yet"
               description="Add your first deal to start tracking your commission pipeline."
-              action={<Button size="sm"><Plus size={16} className="mr-1.5" /> Add Deal</Button>}
+              action={<Button size="sm" onClick={() => { setEditingDeal(null); setDialogOpen(true); }}><Plus size={16} className="mr-1.5" /> Add Deal</Button>}
             />
           ) : (
             <div className="space-y-3">
@@ -128,6 +157,7 @@ export default function PersonalFinancePage() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{deal.listing_name}</span>
                       {deal.is_demo && <Badge variant="outline" className="text-xs">Demo</Badge>}
+                      <Badge variant={deal.status === 'closed' ? 'default' : 'secondary'} className="text-xs capitalize">{deal.status}</Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <Badge variant="secondary" className="text-xs capitalize">{deal.deal_type.replace('_', ' ')}</Badge>
@@ -137,9 +167,24 @@ export default function PersonalFinancePage() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-heading font-semibold text-sm">{formatNZD(deal.net_to_user_after_tax)}</p>
-                    <p className="text-xs text-muted-foreground">net to you</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-heading font-semibold text-sm">{formatNZD(deal.net_to_user_after_tax)}</p>
+                      <p className="text-xs text-muted-foreground">net to you</p>
+                    </div>
+                    <div className="flex gap-1">
+                      {deal.status === 'pipeline' && (
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => closeDeal(deal.id)}>
+                          <Target size={14} />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setEditingDeal(deal); setDialogOpen(true); }}>
+                        <Pencil size={14} />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => deleteDeal(deal.id)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -168,10 +213,7 @@ export default function PersonalFinancePage() {
                   )}
                 >
                   <div className="flex items-center justify-between">
-                    <Badge
-                      variant={scenario.type === 'realistic' ? 'default' : 'secondary'}
-                      className="capitalize"
-                    >
+                    <Badge variant={scenario.type === 'realistic' ? 'default' : 'secondary'} className="capitalize">
                       {scenario.type}
                     </Badge>
                     <span className="font-heading font-bold text-sm">{formatNZD(scenario.totalNet)}</span>

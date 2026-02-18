@@ -1,16 +1,31 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNav } from '@/components/BottomNav';
 import { SetupBanner } from '@/components/SetupBanner';
+import { QuickSetup } from '@/components/QuickSetup';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const isMobile = useIsMobile();
+  const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
 
-  if (loading) {
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('setup_state')
+      .select('is_complete, skipped')
+      .eq('owner_user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setSetupComplete(data?.is_complete || data?.skipped || false);
+      });
+  }, [user]);
+
+  if (loading || (user && setupComplete === null)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -22,6 +37,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+
+  if (!setupComplete) {
+    return <QuickSetup onComplete={() => setSetupComplete(true)} />;
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background">
