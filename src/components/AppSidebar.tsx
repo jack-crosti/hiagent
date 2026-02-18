@@ -45,11 +45,11 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm shrink-0">
-          LP
+          Hi
         </div>
         {!collapsed && (
           <span className="font-heading font-bold text-lg text-sidebar-foreground truncate">
-            Ledger<span className="text-primary">Pilot</span>
+            Hi<span className="text-primary">Agent</span>
           </span>
         )}
       </div>
@@ -109,7 +109,6 @@ export function AppSidebar() {
 
       {/* Footer */}
       <div className="p-2 space-y-1">
-        {/* Demo toggle */}
         <button
           onClick={isDemoMode ? exitDemo : enterDemo}
           className={cn(

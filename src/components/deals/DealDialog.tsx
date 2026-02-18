@@ -12,7 +12,8 @@ import { Loader2 } from 'lucide-react';
 import {
   calculateDealCommission, formatNZD,
   DEFAULT_BUSINESS_SALE_RULE, DEFAULT_LEASE_RULE, DEFAULT_PROPERTY_SALE_RULE,
-  type CommissionRuleConfig, type DealInput, type CommissionBreakdown
+  DEFAULT_SPLITS,
+  type CommissionRuleConfig, type DealInput, type CommissionBreakdown, type UserSplits
 } from '@/services/commissionService';
 
 interface DealDialogProps {
@@ -25,6 +26,7 @@ interface DealDialogProps {
 export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProps) {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [splits, setSplits] = useState<UserSplits>(DEFAULT_SPLITS);
   const [form, setForm] = useState({
     listing_name: '',
     deal_type: 'business_sale' as 'business_sale' | 'lease' | 'property_sale',
@@ -37,6 +39,26 @@ export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProp
   });
 
   const [preview, setPreview] = useState<CommissionBreakdown | null>(null);
+
+  // Load user splits
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('withholding_rate, business_sale_user_share, business_sale_company_share, lease_user_share, lease_company_share, property_sale_user_share, property_sale_company_share')
+      .eq('owner_user_id', user.id).maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setSplits({
+            withholding_rate: data.withholding_rate ?? 0.20,
+            business_sale_user_share: data.business_sale_user_share ?? 0.75,
+            business_sale_company_share: data.business_sale_company_share ?? 0.25,
+            lease_user_share: data.lease_user_share ?? 0.80,
+            lease_company_share: data.lease_company_share ?? 0.20,
+            property_sale_user_share: data.property_sale_user_share ?? 0.75,
+            property_sale_company_share: data.property_sale_company_share ?? 0.25,
+          });
+        }
+      });
+  }, [user]);
 
   useEffect(() => {
     if (deal) {
@@ -70,9 +92,9 @@ export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProp
       override_type: form.override_type || null,
       override_value: form.override_value ? parseFloat(form.override_value) : undefined,
     };
-    const result = calculateDealCommission(dealInput, rule, 0.33);
+    const result = calculateDealCommission(dealInput, rule, splits);
     setPreview(result);
-  }, [form]);
+  }, [form, splits]);
 
   function getRuleForType(type: string): CommissionRuleConfig {
     switch (type) {
@@ -95,7 +117,7 @@ export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProp
       override_type: form.override_type || null,
       override_value: form.override_value ? parseFloat(form.override_value) : undefined,
     };
-    const calc = calculateDealCommission(dealInput, rule, 0.33);
+    const calc = calculateDealCommission(dealInput, rule, splits);
 
     const row = {
       owner_user_id: user.id,
@@ -129,6 +151,7 @@ export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProp
   }
 
   const isLease = form.deal_type === 'lease';
+  const whrPct = Math.round(splits.withholding_rate * 100);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -207,11 +230,11 @@ export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProp
                 <span className="text-right font-medium">{formatNZD(preview.gross_commission_excl_gst)}</span>
                 <span className="text-muted-foreground">+ GST (15%)</span>
                 <span className="text-right">{formatNZD(preview.gst_on_commission)}</span>
-                <span className="text-muted-foreground">On-top fee</span>
+                <span className="text-muted-foreground">On-top fee (The Network)</span>
                 <span className="text-right">-{formatNZD(preview.on_top_fee)}</span>
                 <span className="text-muted-foreground">Your share (after fee)</span>
                 <span className="text-right font-medium">{formatNZD(preview.user_share_excl_gst)}</span>
-                <span className="text-muted-foreground">Est. tax (33%)</span>
+                <span className="text-muted-foreground">Less Withholding tax ({whrPct}%)</span>
                 <span className="text-right">-{formatNZD(preview.estimated_tax)}</span>
                 <span className="text-muted-foreground font-semibold pt-1 border-t border-border">Net to you</span>
                 <span className="text-right font-heading font-bold text-primary pt-1 border-t border-border">

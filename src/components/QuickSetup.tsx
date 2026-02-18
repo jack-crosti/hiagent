@@ -72,10 +72,10 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-heading font-bold text-lg">
-              LP
+              Hi
             </div>
           </div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Welcome to LedgerPilot</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Welcome to HiAgent</h1>
           <p className="text-muted-foreground text-sm">Let's get you set up in under a minute</p>
           
           {/* Steps indicator */}

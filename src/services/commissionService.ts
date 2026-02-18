@@ -26,6 +26,26 @@ export interface DealInput {
   override_value?: number;
 }
 
+export interface UserSplits {
+  business_sale_user_share: number;
+  business_sale_company_share: number;
+  lease_user_share: number;
+  lease_company_share: number;
+  property_sale_user_share: number;
+  property_sale_company_share: number;
+  withholding_rate: number;
+}
+
+export const DEFAULT_SPLITS: UserSplits = {
+  business_sale_user_share: 0.75,
+  business_sale_company_share: 0.25,
+  lease_user_share: 0.80,
+  lease_company_share: 0.20,
+  property_sale_user_share: 0.75,
+  property_sale_company_share: 0.25,
+  withholding_rate: 0.20,
+};
+
 export interface CommissionBreakdown {
   gross_commission_excl_gst: number;
   gst_on_commission: number;
@@ -37,16 +57,14 @@ export interface CommissionBreakdown {
   net_to_user_after_tax: number;
 }
 
-/** Calculate on-top fee: max(1600, min(0.06 * gross, 3000)) */
+/** Calculate on-top fee for The Network: MAX(1650, 0.06 * gross) — NO cap */
 export function calculateOnTopFee(grossCommissionExclGst: number): number {
-  return Math.max(1600, Math.min(0.06 * grossCommissionExclGst, 3000));
+  return Math.max(1650, 0.06 * grossCommissionExclGst);
 }
 
 /** Calculate tiered commission for business/property sales */
 export function calculateTieredCommission(salePrice: number, tiers: CommissionTier[]): number {
   if (!tiers.length) return 0;
-  
-  // Sort tiers by threshold ascending
   const sorted = [...tiers].sort((a, b) => a.threshold - b.threshold);
   let commission = 0;
   let remaining = salePrice;
@@ -55,7 +73,6 @@ export function calculateTieredCommission(salePrice: number, tiers: CommissionTi
     const tier = sorted[i];
     const nextThreshold = i < sorted.length - 1 ? sorted[i + 1].threshold : Infinity;
     const bracket = Math.min(remaining, nextThreshold - tier.threshold);
-    
     if (bracket <= 0) break;
     commission += bracket * tier.rate;
     remaining -= bracket;
@@ -73,19 +90,31 @@ export function calculateLeaseCommission(
   return Math.max(twoMonthsRent, minimumCommission);
 }
 
+/** Get user/company split percents for a deal type from user splits */
+export function getSplitsForType(dealType: string, splits: UserSplits) {
+  switch (dealType) {
+    case 'lease':
+      return { user: splits.lease_user_share, company: splits.lease_company_share };
+    case 'property_sale':
+      return { user: splits.property_sale_user_share, company: splits.property_sale_company_share };
+    default:
+      return { user: splits.business_sale_user_share, company: splits.business_sale_company_share };
+  }
+}
+
 /** Full commission breakdown for a deal */
 export function calculateDealCommission(
   deal: DealInput,
   rule: CommissionRuleConfig,
-  effectiveTaxRate: number
+  splits: UserSplits
 ): CommissionBreakdown {
   let gross = 0;
 
   if (deal.override_type === 'minimum') {
     gross = deal.override_value ?? rule.minimum_commission;
   } else if (deal.override_type === 'percentage' && deal.override_value) {
-    const base = deal.deal_type === 'lease' 
-      ? (deal.annual_rent_excl_gst ?? 0) 
+    const base = deal.deal_type === 'lease'
+      ? (deal.annual_rent_excl_gst ?? 0)
       : (deal.sale_price ?? 0);
     gross = base * deal.override_value;
   } else if (deal.deal_type === 'lease') {
@@ -94,7 +123,6 @@ export function calculateDealCommission(
       rule.minimum_commission
     );
   } else {
-    // Business sale or property sale — tiered
     const tieredAmount = calculateTieredCommission(deal.sale_price ?? 0, rule.tiers);
     gross = Math.max(tieredAmount, rule.minimum_commission);
   }
@@ -102,9 +130,10 @@ export function calculateDealCommission(
   const gst = gross * GST_RATE;
   const fee = calculateOnTopFee(gross);
   const afterFee = gross - fee;
-  const userShare = afterFee * rule.user_share_percent;
-  const companyShare = afterFee * rule.company_share_percent;
-  const tax = userShare * effectiveTaxRate;
+  const { user: userPct, company: companyPct } = getSplitsForType(deal.deal_type, splits);
+  const userShare = afterFee * userPct;
+  const companyShare = afterFee * companyPct;
+  const tax = userShare * splits.withholding_rate;
   const net = userShare - tax;
 
   return {
@@ -156,7 +185,7 @@ export const DEFAULT_PROPERTY_SALE_RULE: CommissionRuleConfig = {
 /** Scenario engine — generate deals needed to hit goal */
 export interface ScenarioInput {
   targetNetAmount: number;
-  effectiveTaxRate: number;
+  splits: UserSplits;
   probabilityThreshold: number;
   dealTypes: ('business_sale' | 'lease' | 'property_sale')[];
 }
@@ -173,23 +202,18 @@ export interface ScenarioResult {
 }
 
 export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
-  const { targetNetAmount, effectiveTaxRate } = input;
-
-  // Work backwards from net target:
-  // net = userShare - tax = userShare * (1 - taxRate)
-  // userShare = afterFee * sharePercent
-  // afterFee = gross - fee
-  // We approximate fee as ~2300 average per deal
-
+  const { targetNetAmount, splits } = input;
   const scenarios: ScenarioResult[] = [];
+  const userPct = splits.business_sale_user_share;
+  const whr = splits.withholding_rate;
+  const whrLabel = `${(whr * 100).toFixed(0)}% withholding`;
 
   // Conservative: minimum commission deals only
-  const minRule = DEFAULT_BUSINESS_SALE_RULE;
-  const minGross = minRule.minimum_commission;
+  const minGross = DEFAULT_BUSINESS_SALE_RULE.minimum_commission;
   const minFee = calculateOnTopFee(minGross);
   const minAfterFee = minGross - minFee;
-  const minUserShare = minAfterFee * 0.75;
-  const minNet = minUserShare * (1 - effectiveTaxRate);
+  const minUserShare = minAfterFee * userPct;
+  const minNet = minUserShare * (1 - whr);
   const conservativeCount = Math.ceil(targetNetAmount / minNet);
 
   scenarios.push({
@@ -198,23 +222,21 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
     totalGross: minGross * conservativeCount,
     totalFees: minFee * conservativeCount,
     totalUserShare: minUserShare * conservativeCount,
-    totalTax: minUserShare * effectiveTaxRate * conservativeCount,
+    totalTax: minUserShare * whr * conservativeCount,
     totalNet: minNet * conservativeCount,
     assumptions: [
       `${conservativeCount} deals at minimum commission ($${minGross.toLocaleString()})`,
-      `75/25 split, fee deducted from gross`,
-      `${(effectiveTaxRate * 100).toFixed(0)}% effective tax rate`,
+      `${(userPct * 100).toFixed(0)}/${((1 - userPct) * 100).toFixed(0)} split, fee deducted from gross`,
+      whrLabel,
     ],
   });
 
   // Realistic: mix of minimum + mid-size deals
-  const midGross = calculateTieredCommission(600000, minRule.tiers);
+  const midGross = calculateTieredCommission(600000, DEFAULT_BUSINESS_SALE_RULE.tiers);
   const midFee = calculateOnTopFee(midGross);
   const midAfterFee = midGross - midFee;
-  const midUserShare = midAfterFee * 0.75;
-  const midNet = midUserShare * (1 - effectiveTaxRate);
-  
-  // Try mix: some min deals + some mid deals
+  const midUserShare = midAfterFee * userPct;
+  const midNet = midUserShare * (1 - whr);
   let remaining = targetNetAmount;
   const midCount = Math.floor(targetNetAmount / midNet / 2);
   remaining -= midNet * midCount;
@@ -229,22 +251,22 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
     totalGross: midGross * midCount + minGross * extraMinCount,
     totalFees: midFee * midCount + minFee * extraMinCount,
     totalUserShare: midUserShare * midCount + minUserShare * extraMinCount,
-    totalTax: (midUserShare * midCount + minUserShare * extraMinCount) * effectiveTaxRate,
+    totalTax: (midUserShare * midCount + minUserShare * extraMinCount) * whr,
     totalNet: midNet * midCount + minNet * extraMinCount,
     assumptions: [
       `${midCount} deals at $600k (commission $${midGross.toLocaleString()})`,
       `${extraMinCount} deals at minimum commission`,
-      `75/25 split, fee deducted from gross`,
-      `${(effectiveTaxRate * 100).toFixed(0)}% effective tax rate`,
+      `${(userPct * 100).toFixed(0)}/${((1 - userPct) * 100).toFixed(0)} split, fee deducted from gross`,
+      whrLabel,
     ],
   });
 
   // Aggressive: larger deals
-  const largeGross = calculateTieredCommission(1500000, minRule.tiers);
+  const largeGross = calculateTieredCommission(1500000, DEFAULT_BUSINESS_SALE_RULE.tiers);
   const largeFee = calculateOnTopFee(largeGross);
   const largeAfterFee = largeGross - largeFee;
-  const largeUserShare = largeAfterFee * 0.75;
-  const largeNet = largeUserShare * (1 - effectiveTaxRate);
+  const largeUserShare = largeAfterFee * userPct;
+  const largeNet = largeUserShare * (1 - whr);
   const largeCount = Math.ceil(targetNetAmount / largeNet);
 
   scenarios.push({
@@ -253,12 +275,12 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
     totalGross: largeGross * largeCount,
     totalFees: largeFee * largeCount,
     totalUserShare: largeUserShare * largeCount,
-    totalTax: largeUserShare * effectiveTaxRate * largeCount,
+    totalTax: largeUserShare * whr * largeCount,
     totalNet: largeNet * largeCount,
     assumptions: [
       `${largeCount} deals at $1.5M (commission $${largeGross.toLocaleString()})`,
-      `75/25 split, fee deducted from gross`,
-      `${(effectiveTaxRate * 100).toFixed(0)}% effective tax rate`,
+      `${(userPct * 100).toFixed(0)}/${((1 - userPct) * 100).toFixed(0)} split, fee deducted from gross`,
+      whrLabel,
     ],
   });
 

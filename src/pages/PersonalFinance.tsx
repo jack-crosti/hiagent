@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Target, TrendingUp, DollarSign, Plus, BarChart3, Pencil, Trash2 } from 'lucide-react';
-import { formatNZD, generateScenarios } from '@/services/commissionService';
+import { formatNZD, generateScenarios, DEFAULT_SPLITS, type UserSplits } from '@/services/commissionService';
 import { cn } from '@/lib/utils';
 import { DealDialog } from '@/components/deals/DealDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ export default function PersonalFinancePage() {
   const { toast } = useToast();
   const [deals, setDeals] = useState<any[]>([]);
   const [goalPlan, setGoalPlan] = useState<any>(null);
+  const [splits, setSplits] = useState<UserSplits>(DEFAULT_SPLITS);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<any>(null);
@@ -33,9 +34,22 @@ export default function PersonalFinancePage() {
     Promise.all([
       supabase.from('deals').select('*').eq('owner_user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('goal_plans').select('*').eq('owner_user_id', user.id).eq('is_active', true).maybeSingle(),
-    ]).then(([dealsRes, goalRes]) => {
+      supabase.from('profiles').select('withholding_rate, business_sale_user_share, business_sale_company_share, lease_user_share, lease_company_share, property_sale_user_share, property_sale_company_share, probability_threshold')
+        .eq('owner_user_id', user.id).maybeSingle(),
+    ]).then(([dealsRes, goalRes, profileRes]) => {
       setDeals(dealsRes.data ?? []);
       setGoalPlan(goalRes.data);
+      if (profileRes.data) {
+        setSplits({
+          withholding_rate: profileRes.data.withholding_rate ?? 0.20,
+          business_sale_user_share: profileRes.data.business_sale_user_share ?? 0.75,
+          business_sale_company_share: profileRes.data.business_sale_company_share ?? 0.25,
+          lease_user_share: profileRes.data.lease_user_share ?? 0.80,
+          lease_company_share: profileRes.data.lease_company_share ?? 0.20,
+          property_sale_user_share: profileRes.data.property_sale_user_share ?? 0.75,
+          property_sale_company_share: profileRes.data.property_sale_company_share ?? 0.25,
+        });
+      }
       setLoading(false);
     });
   }
@@ -61,9 +75,11 @@ export default function PersonalFinancePage() {
   const progressPercent = Math.min(100, (earnedNet / targetNet) * 100);
   const gap = Math.max(0, targetNet - earnedNet);
 
+  const whrPct = Math.round(splits.withholding_rate * 100);
+
   const scenarios = generateScenarios({
     targetNetAmount: gap,
-    effectiveTaxRate: goalPlan?.effective_tax_rate ?? 0.33,
+    splits,
     probabilityThreshold: goalPlan?.probability_threshold ?? 0.60,
     dealTypes: ['business_sale', 'lease'],
   });
@@ -108,7 +124,7 @@ export default function PersonalFinancePage() {
                 {goalPlan?.name ?? 'Net Commission Goal'}
               </h3>
               <p className="text-sm text-muted-foreground">
-                Target: {formatNZD(targetNet)} net after tax
+                Target: {formatNZD(targetNet)} net after withholding
               </p>
             </div>
             <div className="text-right">
@@ -233,7 +249,7 @@ export default function PersonalFinancePage() {
                     <div className="flex justify-between"><span>Gross</span><span>{formatNZD(scenario.totalGross)}</span></div>
                     <div className="flex justify-between"><span>Fees</span><span>-{formatNZD(scenario.totalFees)}</span></div>
                     <div className="flex justify-between"><span>Your share</span><span>{formatNZD(scenario.totalUserShare)}</span></div>
-                    <div className="flex justify-between"><span>Est. tax</span><span>-{formatNZD(scenario.totalTax)}</span></div>
+                    <div className="flex justify-between"><span>Less Withholding tax ({whrPct}%)</span><span>-{formatNZD(scenario.totalTax)}</span></div>
                     <div className="flex justify-between font-semibold text-foreground">
                       <span>Net to you</span><span>{formatNZD(scenario.totalNet)}</span>
                     </div>
