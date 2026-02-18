@@ -105,6 +105,7 @@ export default function SettingsPage() {
         property_sale_user_share: (parseFloat(splits.property_sale_user_share) || 75) / 100,
         property_sale_company_share: (parseFloat(splits.property_sale_company_share) || 25) / 100,
         animations_enabled: animationsEnabled,
+        avatar_url: logoUrl || null,
       }).eq('owner_user_id', user.id),
       supabase.from('brand_profiles').upsert({
         owner_user_id: user.id, ...brand, logo_url: logoUrl || null,
