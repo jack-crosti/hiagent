@@ -106,10 +106,21 @@ export function AppSidebar() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {themes.map(t => (
+              {themes.filter(t => !t.dark).map(t => (
                 <SelectItem key={t.id} value={t.id}>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full" style={{ backgroundColor: `hsl(${t.vars['--primary']})` }} />
+                    {t.name}
+                  </div>
+                </SelectItem>
+              ))}
+              <div className="px-2 py-1.5">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Dark</span>
+              </div>
+              {themes.filter(t => t.dark).map(t => (
+                <SelectItem key={t.id} value={t.id}>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full border border-border" style={{ backgroundColor: `hsl(${t.vars['--primary']})` }} />
                     {t.name}
                   </div>
                 </SelectItem>
