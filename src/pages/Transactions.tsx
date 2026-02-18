@@ -5,10 +5,12 @@ import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRightLeft, Plus, Search } from 'lucide-react';
+import { ArrowRightLeft, Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { formatNZDPrecise } from '@/services/commissionService';
 import { cn } from '@/lib/utils';
+import { TransactionDialog } from '@/components/transactions/TransactionDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface Transaction {
   id: string;
@@ -19,15 +21,26 @@ interface Transaction {
   status: string;
   is_demo: boolean;
   category_id: string | null;
+  bank_account_id: string | null;
+  reference: string | null;
+  gst_amount: number | null;
 }
 
 export default function TransactionsPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTxn, setEditingTxn] = useState<Transaction | null>(null);
 
   useEffect(() => {
+    if (!user) return;
+    loadTransactions();
+  }, [user]);
+
+  function loadTransactions() {
     if (!user) return;
     supabase
       .from('transactions')
@@ -38,7 +51,13 @@ export default function TransactionsPage() {
         setTxns((data as Transaction[]) ?? []);
         setLoading(false);
       });
-  }, [user]);
+  }
+
+  async function deleteTxn(id: string) {
+    await supabase.from('transactions').delete().eq('id', id);
+    setTxns(prev => prev.filter(t => t.id !== id));
+    toast({ title: 'Transaction deleted' });
+  }
 
   const filtered = txns.filter(t =>
     t.description?.toLowerCase().includes(search.toLowerCase())
@@ -50,11 +69,18 @@ export default function TransactionsPage() {
         title="Transactions"
         description="Track and categorise your income and expenses"
         action={
-          <Button size="sm">
+          <Button size="sm" onClick={() => { setEditingTxn(null); setDialogOpen(true); }}>
             <Plus size={16} className="mr-1.5" />
             Add Transaction
           </Button>
         }
+      />
+
+      <TransactionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        transaction={editingTxn}
+        onSaved={loadTransactions}
       />
 
       <div className="mb-4">
@@ -79,8 +105,8 @@ export default function TransactionsPage() {
         <EmptyState
           icon={ArrowRightLeft}
           title="No transactions yet"
-          description="Add your first transaction or connect a bank to get started."
-          action={<Button size="sm"><Plus size={16} className="mr-1.5" /> Add Transaction</Button>}
+          description="Add your first transaction or load demo data from the Dashboard."
+          action={<Button size="sm" onClick={() => { setEditingTxn(null); setDialogOpen(true); }}><Plus size={16} className="mr-1.5" /> Add Transaction</Button>}
         />
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
@@ -92,6 +118,7 @@ export default function TransactionsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider w-20"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -114,6 +141,16 @@ export default function TransactionsPage() {
                       <Badge variant={txn.status === 'cleared' ? 'default' : 'secondary'} className="text-xs">
                         {txn.status}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setEditingTxn(txn); setDialogOpen(true); }}>
+                          <Pencil size={13} />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => deleteTxn(txn.id)}>
+                          <Trash2 size={13} />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
