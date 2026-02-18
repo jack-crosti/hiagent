@@ -1,22 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Globe, Building2, ArrowRight, SkipForward, Check, Loader2 } from 'lucide-react';
+import { SkipForward } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { SetupCommissionStep } from '@/components/setup/SetupCommissionStep';
+import { SetupPersonalStep } from '@/components/setup/SetupPersonalStep';
+import { SetupLogoStep } from '@/components/setup/SetupLogoStep';
+import { SetupThemeStep, type ThemeData } from '@/components/setup/SetupThemeStep';
+import { SetupReviewStep } from '@/components/setup/SetupReviewStep';
 
-const BROKERS = [
-  { id: 'abc_business', name: 'ABC Business Sales', desc: 'NZ business brokerage' },
-  { id: 'link_business', name: 'LINK Business', desc: 'NZ & AU business sales' },
-  { id: 'nz_business_sales', name: 'NZ Business Sales', desc: 'Regional brokerage' },
-  { id: 'bayleys', name: 'Bayleys', desc: 'Property & commercial' },
-  { id: 'colliers', name: 'Colliers NZ', desc: 'Commercial real estate' },
-  { id: 'other', name: 'Other / Independent', desc: 'Custom setup' },
-];
+const STEP_LABELS = ['Commission', 'Details', 'Logo', 'Theme', 'Review'];
 
 interface QuickSetupProps {
   onComplete: () => void;
@@ -25,44 +19,131 @@ interface QuickSetupProps {
 export function QuickSetup({ onComplete }: QuickSetupProps) {
   const { user } = useAuth();
   const [step, setStep] = useState(0);
-  const [websiteUrl, setWebsiteUrl] = useState('');
-  const [selectedBroker, setSelectedBroker] = useState<string | null>(null);
-  const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  async function handleScan() {
-    if (!websiteUrl.trim()) {
-      setStep(2);
-      return;
+  // Step 1 - Commission
+  const [commission, setCommission] = useState({
+    businessSaleUser: 0.75, businessSaleCompany: 0.25,
+    leaseUser: 0.80, leaseCompany: 0.20,
+    propertyUser: 0.75, propertyCompany: 0.25,
+    withholdingRate: 0.20,
+  });
+
+  // Step 2 - Personal
+  const [personal, setPersonal] = useState({
+    firstName: '', lastName: '', phone: '', email: '',
+    companyName: '', title: '',
+  });
+
+  // Step 3 - Logo
+  const [logos, setLogos] = useState<{ url: string; name: string }[]>([]);
+  const [activeLogo, setActiveLogo] = useState<string | null>(null);
+  const [logoSkipped, setLogoSkipped] = useState(false);
+
+  // Step 4 - Theme
+  const [theme, setTheme] = useState<ThemeData>({
+    themeBase: 'light',
+    primaryColor: '#2A9D8F',
+    secondaryColor: '#E9C46A',
+    accentColor: '#E76F51',
+    backgroundColor: '#FAFAF7',
+    textColor: '#1E293B',
+    backgroundMode: 'solid',
+    backgroundTextureId: null,
+    websiteUrl: '',
+  });
+
+  // Pre-fill email from auth user
+  useEffect(() => {
+    if (user?.email && !personal.email) {
+      setPersonal(p => ({ ...p, email: user.email! }));
     }
-    setScanning(true);
-    // Simulate brand scan (will be replaced with AI edge function later)
-    await new Promise(r => setTimeout(r, 1500));
-    setScanning(false);
-    setStep(2);
+  }, [user]);
+
+  // Write audit log helper
+  async function writeAuditLog(eventType: string, details?: Record<string, unknown>) {
+    if (!user) return;
+    await supabase.from('audit_logs').insert([{
+      owner_user_id: user.id,
+      event_type: eventType,
+      details: (details ?? {}) as Record<string, string | number | boolean>,
+    }]);
   }
+
+  // Log setup started on first render
+  useEffect(() => {
+    writeAuditLog('SetupStarted');
+  }, []);
 
   async function handleComplete(skipped = false) {
     if (!user) return;
     setSaving(true);
-    
-    await supabase.from('setup_state').upsert({
-      owner_user_id: user.id,
-      current_step: 3,
-      is_complete: true,
-      skipped,
-      selected_broker: selectedBroker,
-      website_url: websiteUrl || null,
-    }, { onConflict: 'owner_user_id' });
 
-    // Create default profile fields if not exist
-    await supabase.from('profiles').upsert({
-      owner_user_id: user.id,
-      company_name: selectedBroker ? BROKERS.find(b => b.id === selectedBroker)?.name : null,
-    }, { onConflict: 'owner_user_id' });
+    try {
+      // Save profile
+      await supabase.from('profiles').update({
+        first_name: personal.firstName || null,
+        last_name: personal.lastName || null,
+        phone: personal.phone || null,
+        email: personal.email || null,
+        company_name: personal.companyName || null,
+        title: personal.title || null,
+        business_sale_user_share: commission.businessSaleUser,
+        business_sale_company_share: commission.businessSaleCompany,
+        lease_user_share: commission.leaseUser,
+        lease_company_share: commission.leaseCompany,
+        property_sale_user_share: commission.propertyUser,
+        property_sale_company_share: commission.propertyCompany,
+        withholding_rate: commission.withholdingRate,
+        active_theme: theme.themeBase === 'dark' ? 'ocean-blue' : theme.themeBase === 'brand' ? 'sunset-coral' : 'teal-warm',
+        background_mode: theme.backgroundMode,
+        background_asset_id: theme.backgroundTextureId,
+        avatar_url: activeLogo || null,
+        website_url: theme.websiteUrl || null,
+      }).eq('owner_user_id', user.id);
 
-    setSaving(false);
-    onComplete();
+      // Save brand profile if colors set
+      await supabase.from('brand_profiles').upsert({
+        owner_user_id: user.id,
+        primary_color: theme.primaryColor,
+        secondary_color: theme.secondaryColor,
+        accent_color: theme.accentColor,
+        logo_url: activeLogo || null,
+      }, { onConflict: 'owner_user_id' });
+
+      // Update setup state
+      await supabase.from('setup_state').upsert({
+        owner_user_id: user.id,
+        current_step: 5,
+        is_complete: !skipped,
+        skipped,
+        website_url: theme.websiteUrl || null,
+      }, { onConflict: 'owner_user_id' });
+
+      // Write audit logs
+      if (!skipped) {
+        await Promise.all([
+          writeAuditLog('CommissionSettingsUpdated', {
+            businessSplit: `${Math.round(commission.businessSaleUser * 100)}/${Math.round(commission.businessSaleCompany * 100)}`,
+            leaseSplit: `${Math.round(commission.leaseUser * 100)}/${Math.round(commission.leaseCompany * 100)}`,
+            withholdingRate: commission.withholdingRate,
+          }),
+          writeAuditLog('BrandingUpdated', { hasLogo: !!activeLogo, logoSkipped }),
+          writeAuditLog('ThemeUpdated', { themeBase: theme.themeBase, backgroundMode: theme.backgroundMode }),
+          writeAuditLog('SetupCompleted'),
+        ]);
+      } else {
+        await writeAuditLog('SetupSkipped');
+      }
+
+      toast.success(skipped ? 'Setup skipped — you can finish later in Settings' : 'Setup complete!');
+      onComplete();
+    } catch (err) {
+      console.error('Setup save error:', err);
+      toast.error('Failed to save setup. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -76,153 +157,89 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
             </div>
           </div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Welcome to HiAgent</h1>
-          <p className="text-muted-foreground text-sm">Let's get you set up in under a minute</p>
-          
+          <p className="text-muted-foreground text-sm">Let's personalise your experience</p>
+
           {/* Steps indicator */}
-          <div className="flex justify-center gap-2 pt-2">
-            {[0, 1, 2].map(i => (
-              <div
-                key={i}
-                className={cn(
-                  'h-1.5 rounded-full transition-all duration-300',
-                  i <= step ? 'bg-primary w-8' : 'bg-muted w-4'
-                )}
-              />
+          <div className="flex justify-center gap-1.5 pt-2">
+            {STEP_LABELS.map((label, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <div
+                  className={cn(
+                    'h-1.5 rounded-full transition-all duration-300',
+                    i <= step ? 'bg-primary w-8' : 'bg-muted w-4'
+                  )}
+                />
+                <span className={cn(
+                  'text-[9px] transition-colors',
+                  i <= step ? 'text-primary font-medium' : 'text-muted-foreground'
+                )}>
+                  {label}
+                </span>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Step 0: Website scan */}
+        {/* Step content */}
         {step === 0 && (
-          <Card className="shadow-card animate-slide-up">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading flex items-center gap-2">
-                <Globe size={20} className="text-primary" />
-                Brand Your App
-              </CardTitle>
-              <CardDescription>
-                Enter your website URL to auto-detect your logo, colours, and fonts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="website">Website URL</Label>
-                <Input
-                  id="website"
-                  placeholder="https://yourcompany.co.nz"
-                  value={websiteUrl}
-                  onChange={e => setWebsiteUrl(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleScan} disabled={scanning} className="flex-1">
-                  {scanning ? (
-                    <>
-                      <Loader2 size={16} className="mr-1.5 animate-spin" />
-                      Scanning...
-                    </>
-                  ) : (
-                    <>
-                      Scan Website
-                      <ArrowRight size={16} className="ml-1.5" />
-                    </>
-                  )}
-                </Button>
-                <Button variant="ghost" onClick={() => setStep(1)}>
-                  Skip
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <SetupCommissionStep
+            data={commission}
+            onChange={setCommission}
+            onNext={() => setStep(1)}
+          />
         )}
 
-        {/* Step 1: Select broker */}
         {step === 1 && (
-          <Card className="shadow-card animate-slide-up">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading flex items-center gap-2">
-                <Building2 size={20} className="text-primary" />
-                Select Your Brokerage
-              </CardTitle>
-              <CardDescription>
-                This helps us pre-fill commission structures and rules.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                {BROKERS.map(broker => (
-                  <button
-                    key={broker.id}
-                    onClick={() => setSelectedBroker(broker.id)}
-                    className={cn(
-                      'rounded-lg border p-3 text-left transition-all hover:border-primary/40',
-                      selectedBroker === broker.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                        : 'border-border'
-                    )}
-                  >
-                    <p className="text-sm font-medium">{broker.name}</p>
-                    <p className="text-xs text-muted-foreground">{broker.desc}</p>
-                    {selectedBroker === broker.id && (
-                      <Check size={14} className="text-primary mt-1" />
-                    )}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2 pt-2">
-                <Button onClick={() => setStep(2)} disabled={!selectedBroker} className="flex-1">
-                  Continue
-                  <ArrowRight size={16} className="ml-1.5" />
-                </Button>
-                <Button variant="ghost" onClick={() => setStep(2)}>Skip</Button>
-              </div>
-            </CardContent>
-          </Card>
+          <SetupPersonalStep
+            data={personal}
+            onChange={setPersonal}
+            onNext={() => setStep(2)}
+            onBack={() => setStep(0)}
+          />
         )}
 
-        {/* Step 2: Confirmation */}
         {step === 2 && (
-          <Card className="shadow-card animate-slide-up">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">You're All Set!</CardTitle>
-              <CardDescription>
-                Your personalised dashboard is ready. You can always change these later in Settings.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-lg bg-muted/50 p-4 space-y-2 text-sm">
-                {websiteUrl && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">Website</Badge>
-                    <span className="text-muted-foreground truncate">{websiteUrl}</span>
-                  </div>
-                )}
-                {selectedBroker && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">Broker</Badge>
-                    <span className="text-muted-foreground">
-                      {BROKERS.find(b => b.id === selectedBroker)?.name}
-                    </span>
-                  </div>
-                )}
-                {!websiteUrl && !selectedBroker && (
-                  <p className="text-muted-foreground">Using default settings — you can customise later.</p>
-                )}
-              </div>
-              <Button onClick={() => handleComplete(false)} disabled={saving} className="w-full">
-                {saving ? (
-                  <Loader2 size={16} className="mr-1.5 animate-spin" />
-                ) : (
-                  <Check size={16} className="mr-1.5" />
-                )}
-                Launch Dashboard
-              </Button>
-            </CardContent>
-          </Card>
+          <SetupLogoStep
+            logos={logos}
+            activeLogo={activeLogo}
+            onLogosChange={(l, a) => { setLogos(l); setActiveLogo(a); }}
+            onNext={() => setStep(3)}
+            onBack={() => setStep(1)}
+            onSkipLogo={() => { setLogoSkipped(true); setStep(3); }}
+          />
+        )}
+
+        {step === 3 && (
+          <SetupThemeStep
+            data={theme}
+            onChange={setTheme}
+            onNext={() => setStep(4)}
+            onBack={() => setStep(2)}
+          />
+        )}
+
+        {step === 4 && (
+          <SetupReviewStep
+            data={{
+              businessSplit: `${Math.round(commission.businessSaleUser * 100)}/${Math.round(commission.businessSaleCompany * 100)}`,
+              leaseSplit: `${Math.round(commission.leaseUser * 100)}/${Math.round(commission.leaseCompany * 100)}`,
+              propertySplit: `${Math.round(commission.propertyUser * 100)}/${Math.round(commission.propertyCompany * 100)}`,
+              withholdingRate: `${Math.round(commission.withholdingRate * 100)}%`,
+              name: [personal.firstName, personal.lastName].filter(Boolean).join(' '),
+              email: personal.email,
+              hasLogo: !!activeLogo,
+              logoUrl: activeLogo,
+              themeBase: theme.themeBase,
+              backgroundMode: theme.backgroundMode,
+            }}
+            saving={saving}
+            onApply={() => handleComplete(false)}
+            onBack={() => setStep(3)}
+          />
         )}
 
         {/* Skip all */}
-        {step < 2 && (
+        {step < 4 && (
           <div className="text-center">
             <button
               onClick={() => handleComplete(true)}
