@@ -8,7 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, TrendingUp, DollarSign, Plus, BarChart3, Pencil, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Target, TrendingUp, DollarSign, Plus, BarChart3, Pencil, Trash2, Settings2, Loader2 } from 'lucide-react';
 import { formatNZD, generateScenarios, DEFAULT_SPLITS, type UserSplits } from '@/services/commissionService';
 import { cn } from '@/lib/utils';
 import { DealDialog } from '@/components/deals/DealDialog';
@@ -23,6 +26,11 @@ export default function PersonalFinancePage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<any>(null);
+
+  // Goal editing
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
+  const [goalForm, setGoalForm] = useState({ name: 'Annual Goal', target: 200000, start: '', end: '' });
+  const [savingGoal, setSavingGoal] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -52,6 +60,47 @@ export default function PersonalFinancePage() {
       }
       setLoading(false);
     });
+  }
+
+  function openGoalDialog() {
+    const currentYear = new Date().getFullYear();
+    setGoalForm({
+      name: goalPlan?.name || 'Annual Goal',
+      target: goalPlan?.target_net_amount || 200000,
+      start: goalPlan?.period_start || `${currentYear}-04-01`,
+      end: goalPlan?.period_end || `${currentYear + 1}-03-31`,
+    });
+    setGoalDialogOpen(true);
+  }
+
+  async function saveGoal() {
+    if (!user) return;
+    setSavingGoal(true);
+    const { error } = await supabase.from('goal_plans').upsert({
+      owner_user_id: user.id,
+      name: goalForm.name,
+      target_net_amount: goalForm.target,
+      period_start: goalForm.start,
+      period_end: goalForm.end,
+      is_active: true,
+    }, { onConflict: 'owner_user_id' });
+
+    if (error) {
+      // If upsert fails due to no unique constraint, try insert
+      await supabase.from('goal_plans').insert({
+        owner_user_id: user.id,
+        name: goalForm.name,
+        target_net_amount: goalForm.target,
+        period_start: goalForm.start,
+        period_end: goalForm.end,
+        is_active: true,
+      });
+    }
+
+    setSavingGoal(false);
+    setGoalDialogOpen(false);
+    toast({ title: 'Goal updated' });
+    loadData();
   }
 
   async function deleteDeal(id: string) {
@@ -115,6 +164,58 @@ export default function PersonalFinancePage() {
         onSaved={loadData}
       />
 
+      {/* Goal Dialog */}
+      <Dialog open={goalDialogOpen} onOpenChange={setGoalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-heading">Set Commission Goal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Goal Name</Label>
+              <Input value={goalForm.name} onChange={(e) => setGoalForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Net Commission Target ($)</Label>
+              <Input type="number" min={0} step={1000} value={goalForm.target}
+                onChange={(e) => setGoalForm(f => ({ ...f, target: Number(e.target.value) || 0 }))} />
+              <div className="flex flex-wrap gap-2 pt-1">
+                {[100000, 150000, 200000, 250000, 300000, 500000].map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => setGoalForm(f => ({ ...f, target: amt }))}
+                    className={`rounded-full border px-2.5 py-0.5 text-xs transition-all ${
+                      goalForm.target === amt
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border text-muted-foreground hover:border-primary/40'
+                    }`}
+                  >
+                    {formatNZD(amt)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Period Start</Label>
+                <Input type="date" value={goalForm.start} onChange={(e) => setGoalForm(f => ({ ...f, start: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Period End</Label>
+                <Input type="date" value={goalForm.end} onChange={(e) => setGoalForm(f => ({ ...f, end: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGoalDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveGoal} disabled={savingGoal}>
+              {savingGoal && <Loader2 size={14} className="mr-1.5 animate-spin" />}
+              Save Goal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Goal Card */}
       <Card className="shadow-card mb-6 border-primary/20">
         <CardContent className="pt-6">
@@ -127,9 +228,14 @@ export default function PersonalFinancePage() {
                 Target: {formatNZD(targetNet)} net after withholding
               </p>
             </div>
-            <div className="text-right">
-              <p className="font-heading text-2xl font-bold text-primary">{formatNZD(earnedNet)}</p>
-              <p className="text-xs text-muted-foreground">earned to date</p>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="font-heading text-2xl font-bold text-primary">{formatNZD(earnedNet)}</p>
+                <p className="text-xs text-muted-foreground">earned to date</p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={openGoalDialog}>
+                <Settings2 size={16} className="text-muted-foreground" />
+              </Button>
             </div>
           </div>
           <Progress value={progressPercent} className="h-3 mb-2" />

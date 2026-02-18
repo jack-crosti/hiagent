@@ -2,12 +2,13 @@ import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDemo } from '@/contexts/DemoContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard, ArrowRightLeft, BookOpen, Receipt,
   CreditCard, Brain, Zap, User, Megaphone, FileText,
   Palette, Settings, LogOut, ChevronLeft, ChevronRight, Eye, Paintbrush
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -30,10 +31,17 @@ const navItems = [
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { activeTheme, setTheme, themes } = useTheme();
   const { isDemoMode, enterDemo, exitDemo } = useDemo();
   const location = useLocation();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('avatar_url').eq('owner_user_id', user.id).maybeSingle()
+      .then(({ data }) => setLogoUrl(data?.avatar_url || null));
+  }, [user]);
 
   return (
     <aside
@@ -44,9 +52,13 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm shrink-0">
-          Hi
-        </div>
+        {logoUrl ? (
+          <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-lg object-contain shrink-0" />
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm shrink-0">
+            Hi
+          </div>
+        )}
         {!collapsed && (
           <span className="font-heading font-bold text-lg text-sidebar-foreground truncate">
             Hi<span className="text-primary">Agent</span>

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -16,6 +17,12 @@ import {
 import { Shield, Trash2, Save, Loader2, UserCircle, Upload, Paintbrush, RotateCcw, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+
+const FONT_OPTIONS = [
+  'Plus Jakarta Sans', 'DM Sans', 'Inter', 'Manrope', 'Outfit',
+  'Satoshi', 'Space Grotesk', 'Sora', 'Nunito', 'Raleway',
+  'Lato', 'Open Sans', 'Montserrat', 'Rubik', 'Work Sans',
+];
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -306,8 +313,30 @@ export default function SettingsPage() {
             </div>
             <Separator />
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Heading Font</Label><Input value={brand.font_heading} onChange={e => setBrand(b => ({ ...b, font_heading: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Body Font</Label><Input value={brand.font_body} onChange={e => setBrand(b => ({ ...b, font_body: e.target.value }))} /></div>
+              <div className="space-y-2">
+                <Label>Heading Font</Label>
+                <Select value={brand.font_heading} onValueChange={(v) => setBrand(b => ({ ...b, font_heading: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map(font => (
+                      <SelectItem key={font} value={font}><span style={{ fontFamily: font }}>{font}</span></SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground" style={{ fontFamily: brand.font_heading }}>Preview: The quick brown fox</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Body Font</Label>
+                <Select value={brand.font_body} onValueChange={(v) => setBrand(b => ({ ...b, font_body: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map(font => (
+                      <SelectItem key={font} value={font}><span style={{ fontFamily: font }}>{font}</span></SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground" style={{ fontFamily: brand.font_body }}>Preview: The quick brown fox</p>
+              </div>
             </div>
             <Separator />
             <div className="flex items-center justify-between">

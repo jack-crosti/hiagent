@@ -1,13 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, DollarSign, User, Image, Palette } from 'lucide-react';
+import { Check, Loader2, DollarSign, User, Image, Palette, Target } from 'lucide-react';
+import { formatNZD } from '@/services/commissionService';
 
 interface ReviewData {
   businessSplit: string;
   leaseSplit: string;
   propertySplit: string;
   withholdingRate: string;
+  goalAmount: number;
   name: string;
   email: string;
   hasLogo: boolean;
@@ -46,12 +48,12 @@ export function SetupReviewStep({ data, saving, onApply, onBack }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Preview card */}
         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1 divide-y divide-border/50">
           <ReviewRow icon={<DollarSign size={14} />} label="Business Sale Split" value={data.businessSplit} />
           <ReviewRow icon={<DollarSign size={14} />} label="Lease Split" value={data.leaseSplit} />
           <ReviewRow icon={<DollarSign size={14} />} label="Property Sale Split" value={data.propertySplit} />
           <ReviewRow icon={<DollarSign size={14} />} label="Withholding Tax" value={data.withholdingRate} />
+          <ReviewRow icon={<Target size={14} />} label="Commission Goal" value={data.goalAmount > 0 ? formatNZD(data.goalAmount) : 'Not set'} />
           {data.name && <ReviewRow icon={<User size={14} />} label="Name" value={data.name} />}
           {data.email && <ReviewRow icon={<User size={14} />} label="Email" value={data.email} />}
           <ReviewRow icon={<Image size={14} />} label="Logo" value={data.hasLogo ? 'Uploaded' : 'Skipped'} />
@@ -59,7 +61,6 @@ export function SetupReviewStep({ data, saving, onApply, onBack }: Props) {
           <ReviewRow icon={<Palette size={14} />} label="Background" value={data.backgroundMode} />
         </div>
 
-        {/* Mini preview */}
         {data.logoUrl && (
           <div className="rounded-lg border border-border p-3 flex items-center gap-3">
             <img src={data.logoUrl} alt="Logo preview" className="h-10 w-auto object-contain" />
