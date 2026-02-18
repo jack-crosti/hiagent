@@ -10,6 +10,32 @@ import { UserTypeSelector } from '@/components/UserTypeSelector';
 import { DemoBanner } from '@/components/DemoBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+/**
+ * Checks whether the user's required settings are complete.
+ * Setup wizard triggers if ANY of these are missing.
+ */
+function isSetupIncomplete(profile: Record<string, unknown> | null, setupState: Record<string, unknown> | null): boolean {
+  if (!profile) return true;
+
+  // Splits not set (still at exact default or null)
+  const splitsNotSet =
+    profile.business_sale_user_share == null ||
+    profile.lease_user_share == null ||
+    profile.property_sale_user_share == null;
+
+  // Withholding rate not set
+  const whrNotSet = profile.withholding_rate == null;
+
+  // Logo not set and user hasn't explicitly skipped
+  const logoSkipped = setupState?.skipped === true;
+  const logoNotSet = !profile.avatar_url && !logoSkipped;
+
+  // Theme not set
+  const themeNotSet = !profile.active_theme;
+
+  return splitsNotSet || whrNotSet || logoNotSet || themeNotSet;
+}
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const isMobile = useIsMobile();
@@ -20,10 +46,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (!user) return;
     Promise.all([
       supabase.from('setup_state').select('is_complete, skipped').eq('owner_user_id', user.id).maybeSingle(),
-      supabase.from('profiles').select('user_type').eq('owner_user_id', user.id).maybeSingle(),
+      supabase.from('profiles').select('user_type, business_sale_user_share, lease_user_share, property_sale_user_share, withholding_rate, avatar_url, active_theme').eq('owner_user_id', user.id).maybeSingle(),
     ]).then(([setupRes, profileRes]) => {
-      setSetupComplete(setupRes.data?.is_complete || setupRes.data?.skipped || false);
       setUserType(profileRes.data?.user_type ?? null);
+
+      // If setup is explicitly marked complete, honour that
+      if (setupRes.data?.is_complete) {
+        setSetupComplete(true);
+        return;
+      }
+
+      // Otherwise check if required settings are actually filled
+      const incomplete = isSetupIncomplete(
+        profileRes.data as Record<string, unknown> | null,
+        setupRes.data as Record<string, unknown> | null
+      );
+      setSetupComplete(!incomplete);
     });
   }, [user]);
 
