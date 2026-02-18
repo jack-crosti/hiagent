@@ -6,6 +6,7 @@ export interface ThemeDefinition {
   id: string;
   name: string;
   description: string;
+  dark?: boolean;
   vars: Record<string, string>;
 }
 
@@ -80,6 +81,119 @@ export const THEMES: ThemeDefinition[] = [
       '--sidebar-accent': '15 25% 16%',
     },
   },
+  // --- Dark themes ---
+  {
+    id: 'dark-teal',
+    name: 'Dark Teal',
+    description: 'Dark mode with teal accents',
+    dark: true,
+    vars: {
+      '--primary': '174 58% 45%',
+      '--primary-foreground': '220 20% 8%',
+      '--accent': '12 76% 61%',
+      '--accent-foreground': '0 0% 100%',
+      '--secondary': '220 14% 16%',
+      '--secondary-foreground': '40 20% 96%',
+      '--background': '220 20% 8%',
+      '--foreground': '40 20% 96%',
+      '--card': '220 18% 11%',
+      '--card-foreground': '40 20% 96%',
+      '--popover': '220 18% 11%',
+      '--popover-foreground': '40 20% 96%',
+      '--muted': '220 14% 16%',
+      '--muted-foreground': '220 10% 60%',
+      '--destructive': '0 62% 30%',
+      '--destructive-foreground': '40 20% 96%',
+      '--border': '220 14% 18%',
+      '--input': '220 14% 18%',
+      '--sidebar-background': '220 20% 6%',
+      '--sidebar-accent': '220 14% 14%',
+    },
+  },
+  {
+    id: 'dark-blue',
+    name: 'Dark Blue',
+    description: 'Dark mode with ocean blue accents',
+    dark: true,
+    vars: {
+      '--primary': '210 80% 55%',
+      '--primary-foreground': '220 20% 8%',
+      '--accent': '38 92% 50%',
+      '--accent-foreground': '0 0% 100%',
+      '--secondary': '210 14% 16%',
+      '--secondary-foreground': '210 20% 94%',
+      '--background': '215 22% 8%',
+      '--foreground': '210 20% 94%',
+      '--card': '215 20% 11%',
+      '--card-foreground': '210 20% 94%',
+      '--popover': '215 20% 11%',
+      '--popover-foreground': '210 20% 94%',
+      '--muted': '215 14% 16%',
+      '--muted-foreground': '210 10% 58%',
+      '--destructive': '0 62% 30%',
+      '--destructive-foreground': '210 20% 94%',
+      '--border': '215 14% 18%',
+      '--input': '215 14% 18%',
+      '--sidebar-background': '215 22% 6%',
+      '--sidebar-accent': '215 14% 14%',
+    },
+  },
+  {
+    id: 'dark-purple',
+    name: 'Dark Purple',
+    description: 'Dark mode with royal purple accents',
+    dark: true,
+    vars: {
+      '--primary': '270 50% 60%',
+      '--primary-foreground': '270 20% 8%',
+      '--accent': '340 65% 60%',
+      '--accent-foreground': '0 0% 100%',
+      '--secondary': '270 14% 16%',
+      '--secondary-foreground': '270 15% 94%',
+      '--background': '270 18% 8%',
+      '--foreground': '270 10% 94%',
+      '--card': '270 16% 11%',
+      '--card-foreground': '270 10% 94%',
+      '--popover': '270 16% 11%',
+      '--popover-foreground': '270 10% 94%',
+      '--muted': '270 14% 16%',
+      '--muted-foreground': '270 10% 58%',
+      '--destructive': '0 62% 30%',
+      '--destructive-foreground': '270 10% 94%',
+      '--border': '270 14% 18%',
+      '--input': '270 14% 18%',
+      '--sidebar-background': '270 18% 6%',
+      '--sidebar-accent': '270 14% 14%',
+    },
+  },
+  {
+    id: 'dark-midnight',
+    name: 'Midnight',
+    description: 'Pure dark with minimal contrast',
+    dark: true,
+    vars: {
+      '--primary': '174 58% 45%',
+      '--primary-foreground': '0 0% 5%',
+      '--accent': '38 80% 55%',
+      '--accent-foreground': '0 0% 100%',
+      '--secondary': '0 0% 14%',
+      '--secondary-foreground': '0 0% 90%',
+      '--background': '0 0% 5%',
+      '--foreground': '0 0% 92%',
+      '--card': '0 0% 8%',
+      '--card-foreground': '0 0% 92%',
+      '--popover': '0 0% 8%',
+      '--popover-foreground': '0 0% 92%',
+      '--muted': '0 0% 14%',
+      '--muted-foreground': '0 0% 55%',
+      '--destructive': '0 62% 30%',
+      '--destructive-foreground': '0 0% 92%',
+      '--border': '0 0% 16%',
+      '--input': '0 0% 16%',
+      '--sidebar-background': '0 0% 4%',
+      '--sidebar-accent': '0 0% 12%',
+    },
+  },
 ];
 
 /** Convert hex (#RRGGBB) to HSL string "H S% L%" */
@@ -104,16 +218,6 @@ function hexToHsl(hex: string): string {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
-/** Lighten an HSL string for secondary/background derivations */
-function lightenHsl(hsl: string, amount: number): string {
-  const parts = hsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
-  if (!parts) return hsl;
-  const h = parseInt(parts[1]);
-  const s = Math.max(0, parseInt(parts[2]) - 30);
-  const l = Math.min(98, parseInt(parts[3]) + amount);
-  return `${h} ${s}% ${l}%`;
-}
-
 interface BrandColors {
   primary_color: string | null;
   secondary_color: string | null;
@@ -126,6 +230,7 @@ interface ThemeContextType {
   setTheme: (themeId: string) => void;
   themes: ThemeDefinition[];
   refreshBrand: () => void;
+  isDark: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -153,36 +258,57 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     loadBrand();
   }, [user]);
 
+  const currentTheme = THEMES.find(t => t.id === activeTheme);
+  const isDark = currentTheme?.dark ?? false;
+
   // Apply base theme preset
   useEffect(() => {
-    const theme = THEMES.find(t => t.id === activeTheme);
-    if (!theme) return;
+    if (!currentTheme) return;
     const root = document.documentElement;
-    Object.entries(theme.vars).forEach(([key, value]) => {
+
+    // Toggle dark class
+    if (currentTheme.dark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+
+    // Apply all vars from the theme
+    Object.entries(currentTheme.vars).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
-    root.style.setProperty('--ring', theme.vars['--primary']);
-    root.style.setProperty('--sidebar-primary', theme.vars['--primary']);
-    root.style.setProperty('--sidebar-ring', theme.vars['--primary']);
-    const isDarkSidebar = theme.vars['--sidebar-background'] !== '0 0% 100%';
-    if (isDarkSidebar) {
+
+    // Ring & sidebar primary always mirror --primary
+    root.style.setProperty('--ring', currentTheme.vars['--primary']);
+    root.style.setProperty('--sidebar-primary', currentTheme.vars['--primary']);
+    root.style.setProperty('--sidebar-ring', currentTheme.vars['--primary']);
+
+    // Sidebar foreground logic
+    if (currentTheme.dark) {
       root.style.setProperty('--sidebar-foreground', '40 20% 90%');
       root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
       root.style.setProperty('--sidebar-accent-foreground', '40 20% 90%');
-      root.style.setProperty('--sidebar-border', theme.vars['--sidebar-accent']);
+      root.style.setProperty('--sidebar-border', currentTheme.vars['--sidebar-accent'] || '220 14% 14%');
     } else {
-      root.style.setProperty('--sidebar-foreground', '220 20% 14%');
-      root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
-      root.style.setProperty('--sidebar-accent-foreground', '220 20% 14%');
-      root.style.setProperty('--sidebar-border', '220 13% 92%');
+      const isDarkSidebar = currentTheme.vars['--sidebar-background'] !== '0 0% 100%';
+      if (isDarkSidebar) {
+        root.style.setProperty('--sidebar-foreground', '40 20% 90%');
+        root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
+        root.style.setProperty('--sidebar-accent-foreground', '40 20% 90%');
+        root.style.setProperty('--sidebar-border', currentTheme.vars['--sidebar-accent']);
+      } else {
+        root.style.setProperty('--sidebar-foreground', '220 20% 14%');
+        root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
+        root.style.setProperty('--sidebar-accent-foreground', '220 20% 14%');
+        root.style.setProperty('--sidebar-border', '220 13% 92%');
+      }
     }
-  }, [activeTheme]);
+  }, [activeTheme, currentTheme]);
 
-  // Overlay brand custom colors on top of theme when apply_to_ui is true
+  // Overlay brand custom colors
   useEffect(() => {
     if (!brandColors?.apply_to_ui) return;
     const root = document.documentElement;
-
     if (brandColors.primary_color) {
       const hsl = hexToHsl(brandColors.primary_color);
       if (hsl) {
@@ -214,7 +340,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ activeTheme, setTheme, themes: THEMES, refreshBrand }}>
+    <ThemeContext.Provider value={{ activeTheme, setTheme, themes: THEMES, refreshBrand, isDark }}>
       {children}
     </ThemeContext.Provider>
   );
