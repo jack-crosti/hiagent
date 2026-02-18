@@ -27,7 +27,7 @@ const FONT_OPTIONS = [
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { activeTheme, setTheme, themes } = useTheme();
+  const { activeTheme, setTheme, themes, refreshBrand } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -112,6 +112,7 @@ export default function SettingsPage() {
       }, { onConflict: 'owner_user_id' }),
     ]);
     setSaving(false);
+    refreshBrand();
     toast({ title: 'Settings saved' });
   }
 

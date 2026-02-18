@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Palette, Globe, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const FONT_OPTIONS = [
   'Plus Jakarta Sans', 'DM Sans', 'Inter', 'Manrope', 'Outfit',
@@ -21,6 +22,7 @@ const FONT_OPTIONS = [
 export default function CustomizationPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { refreshBrand } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [importingColors, setImportingColors] = useState(false);
@@ -109,6 +111,7 @@ export default function CustomizationPage() {
     }).eq('owner_user_id', user.id);
 
     setSaving(false);
+    refreshBrand();
     toast({ title: 'Brand settings saved' });
   }
 
