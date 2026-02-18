@@ -899,6 +899,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_theme: string | null
+          animations_enabled: boolean | null
           avatar_url: string | null
           company_name: string | null
           created_at: string
@@ -915,8 +917,11 @@ export type Database = {
           probability_threshold: number | null
           title: string | null
           updated_at: string
+          user_type: string | null
         }
         Insert: {
+          active_theme?: string | null
+          animations_enabled?: boolean | null
           avatar_url?: string | null
           company_name?: string | null
           created_at?: string
@@ -933,8 +938,11 @@ export type Database = {
           probability_threshold?: number | null
           title?: string | null
           updated_at?: string
+          user_type?: string | null
         }
         Update: {
+          active_theme?: string | null
+          animations_enabled?: boolean | null
           avatar_url?: string | null
           company_name?: string | null
           created_at?: string
@@ -951,6 +959,7 @@ export type Database = {
           probability_threshold?: number | null
           title?: string | null
           updated_at?: string
+          user_type?: string | null
         }
         Relationships: []
       }
@@ -1252,7 +1261,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_user_account: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

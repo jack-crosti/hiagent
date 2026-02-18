@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Eye } from 'lucide-react';
+import { useDemo } from '@/contexts/DemoContext';
 
 export function DemoModeCard({ userId, onComplete }: { userId: string; onComplete: () => void }) {
   const [loading, setLoading] = useState(false);
+  const { enterDemo } = useDemo();
 
   async function seedDemoData() {
     setLoading(true);
@@ -97,16 +99,21 @@ export function DemoModeCard({ userId, onComplete }: { userId: string; onComplet
       <CardHeader>
         <CardTitle className="text-lg font-heading flex items-center gap-2">
           <Sparkles size={18} className="text-primary" />
-          Try Demo Mode
+          Get Started
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Load realistic sample data to explore all features — transactions, deals, GST periods, and commission calculations.
+          Load realistic sample data to explore all features, or try a guided demo tour.
         </p>
-        <Button onClick={seedDemoData} disabled={loading} className="w-full">
-          {loading ? 'Generating demo data...' : 'Load Demo Data'}
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={seedDemoData} disabled={loading} className="w-full">
+            {loading ? 'Generating demo data...' : 'Load Demo Data'}
+          </Button>
+          <Button variant="outline" onClick={enterDemo} className="w-full">
+            <Eye size={16} className="mr-1.5" /> Take a Guided Tour
+          </Button>
+        </div>
         <p className="text-xs text-muted-foreground">
           Demo data is clearly labeled and can be cleared anytime.
         </p>
