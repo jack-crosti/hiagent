@@ -6,27 +6,49 @@ import { StatCard } from '@/components/StatCard';
 import { EmptyState } from '@/components/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Receipt } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Receipt, CheckCircle2 } from 'lucide-react';
 import { formatNZD } from '@/services/commissionService';
+import { useToast } from '@/hooks/use-toast';
 
 export default function GSTPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [periods, setPeriods] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
+    loadPeriods();
+  }, [user]);
+
+  function loadPeriods() {
+    if (!user) return;
     supabase.from('gst_periods').select('*').eq('owner_user_id', user.id)
       .order('period_start', { ascending: false })
       .then(({ data }) => { setPeriods(data ?? []); setLoading(false); });
-  }, [user]);
+  }
+
+  async function markFiled(id: string) {
+    const { error } = await supabase.from('gst_periods').update({ filing_status: 'filed' }).eq('id', id);
+    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: 'Marked as filed' });
+    loadPeriods();
+  }
+
+  async function markPaid(id: string) {
+    const { error } = await supabase.from('gst_periods').update({ filing_status: 'paid', status: 'closed' }).eq('id', id);
+    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: 'Marked as paid & closed' });
+    loadPeriods();
+  }
 
   const currentPeriod = periods[0];
 
   return (
     <>
       <PageHeader title="GST" description="Track GST periods, filings, and health checks — 15% NZ rate" />
-      
+
       {loading ? (
         <div className="h-32 rounded-xl bg-muted animate-pulse" />
       ) : periods.length === 0 ? (
@@ -56,11 +78,23 @@ export default function GSTPage() {
                         Due: {p.due_date ? new Date(p.due_date).toLocaleDateString('en-NZ') : 'TBC'}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-heading font-semibold text-sm">{formatNZD(p.net_gst)}</p>
-                      <Badge variant={p.status === 'open' ? 'secondary' : 'default'} className="text-xs capitalize mt-1">
-                        {p.filing_status.replace('_', ' ')}
-                      </Badge>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="font-heading font-semibold text-sm">{formatNZD(p.net_gst)}</p>
+                        <Badge variant={p.status === 'open' ? 'secondary' : 'default'} className="text-xs capitalize mt-1">
+                          {p.filing_status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      {p.filing_status === 'not_filed' && (
+                        <Button size="sm" variant="outline" onClick={() => markFiled(p.id)}>
+                          <CheckCircle2 size={14} className="mr-1" /> Mark Filed
+                        </Button>
+                      )}
+                      {p.filing_status === 'filed' && p.status === 'open' && (
+                        <Button size="sm" onClick={() => markPaid(p.id)}>
+                          <CheckCircle2 size={14} className="mr-1" /> Mark Paid
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
