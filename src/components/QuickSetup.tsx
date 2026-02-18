@@ -5,12 +5,13 @@ import { SkipForward } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SetupCommissionStep } from '@/components/setup/SetupCommissionStep';
+import { SetupGoalStep } from '@/components/setup/SetupGoalStep';
 import { SetupPersonalStep } from '@/components/setup/SetupPersonalStep';
 import { SetupLogoStep } from '@/components/setup/SetupLogoStep';
 import { SetupThemeStep, type ThemeData } from '@/components/setup/SetupThemeStep';
 import { SetupReviewStep } from '@/components/setup/SetupReviewStep';
 
-const STEP_LABELS = ['Commission', 'Details', 'Logo', 'Theme', 'Review'];
+const STEP_LABELS = ['Commission', 'Goal', 'Details', 'Logo', 'Theme', 'Review'];
 
 interface QuickSetupProps {
   onComplete: () => void;
@@ -29,18 +30,26 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
     withholdingRate: 0.20,
   });
 
-  // Step 2 - Personal
+  // Step 2 - Goal
+  const currentYear = new Date().getFullYear();
+  const [goal, setGoal] = useState({
+    targetNetAmount: 200000,
+    periodStart: `${currentYear}-04-01`,
+    periodEnd: `${currentYear + 1}-03-31`,
+  });
+
+  // Step 3 - Personal
   const [personal, setPersonal] = useState({
     firstName: '', lastName: '', phone: '', email: '',
     companyName: '', title: '',
   });
 
-  // Step 3 - Logo
+  // Step 4 - Logo
   const [logos, setLogos] = useState<{ url: string; name: string }[]>([]);
   const [activeLogo, setActiveLogo] = useState<string | null>(null);
   const [logoSkipped, setLogoSkipped] = useState(false);
 
-  // Step 4 - Theme
+  // Step 5 - Theme
   const [theme, setTheme] = useState<ThemeData>({
     themeBase: 'light',
     primaryColor: '#2A9D8F',
@@ -111,10 +120,22 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         logo_url: activeLogo || null,
       }, { onConflict: 'owner_user_id' });
 
+      // Save goal plan
+      if (goal.targetNetAmount > 0) {
+        await supabase.from('goal_plans').upsert({
+          owner_user_id: user.id,
+          name: 'Annual Goal',
+          target_net_amount: goal.targetNetAmount,
+          period_start: goal.periodStart,
+          period_end: goal.periodEnd,
+          is_active: true,
+        }, { onConflict: 'owner_user_id' });
+      }
+
       // Update setup state
       await supabase.from('setup_state').upsert({
         owner_user_id: user.id,
-        current_step: 5,
+        current_step: STEP_LABELS.length,
         is_complete: !skipped,
         skipped,
         website_url: theme.websiteUrl || null,
@@ -128,6 +149,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
             leaseSplit: `${Math.round(commission.leaseUser * 100)}/${Math.round(commission.leaseCompany * 100)}`,
             withholdingRate: commission.withholdingRate,
           }),
+          writeAuditLog('GoalSet', { targetNetAmount: goal.targetNetAmount }),
           writeAuditLog('BrandingUpdated', { hasLogo: !!activeLogo, logoSkipped }),
           writeAuditLog('ThemeUpdated', { themeBase: theme.themeBase, backgroundMode: theme.backgroundMode }),
           writeAuditLog('SetupCompleted'),
@@ -145,6 +167,8 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
       setSaving(false);
     }
   }
+
+  const lastStep = STEP_LABELS.length - 1;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -166,7 +190,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
                 <div
                   className={cn(
                     'h-1.5 rounded-full transition-all duration-300',
-                    i <= step ? 'bg-primary w-8' : 'bg-muted w-4'
+                    i <= step ? 'bg-primary w-6' : 'bg-muted w-3'
                   )}
                 />
                 <span className={cn(
@@ -190,41 +214,51 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         )}
 
         {step === 1 && (
-          <SetupPersonalStep
-            data={personal}
-            onChange={setPersonal}
+          <SetupGoalStep
+            data={goal}
+            onChange={setGoal}
             onNext={() => setStep(2)}
             onBack={() => setStep(0)}
           />
         )}
 
         {step === 2 && (
-          <SetupLogoStep
-            logos={logos}
-            activeLogo={activeLogo}
-            onLogosChange={(l, a) => { setLogos(l); setActiveLogo(a); }}
+          <SetupPersonalStep
+            data={personal}
+            onChange={setPersonal}
             onNext={() => setStep(3)}
             onBack={() => setStep(1)}
-            onSkipLogo={() => { setLogoSkipped(true); setStep(3); }}
           />
         )}
 
         {step === 3 && (
-          <SetupThemeStep
-            data={theme}
-            onChange={setTheme}
+          <SetupLogoStep
+            logos={logos}
+            activeLogo={activeLogo}
+            onLogosChange={(l, a) => { setLogos(l); setActiveLogo(a); }}
             onNext={() => setStep(4)}
             onBack={() => setStep(2)}
+            onSkipLogo={() => { setLogoSkipped(true); setStep(4); }}
           />
         )}
 
         {step === 4 && (
+          <SetupThemeStep
+            data={theme}
+            onChange={setTheme}
+            onNext={() => setStep(5)}
+            onBack={() => setStep(3)}
+          />
+        )}
+
+        {step === 5 && (
           <SetupReviewStep
             data={{
               businessSplit: `${Math.round(commission.businessSaleUser * 100)}/${Math.round(commission.businessSaleCompany * 100)}`,
               leaseSplit: `${Math.round(commission.leaseUser * 100)}/${Math.round(commission.leaseCompany * 100)}`,
               propertySplit: `${Math.round(commission.propertyUser * 100)}/${Math.round(commission.propertyCompany * 100)}`,
               withholdingRate: `${Math.round(commission.withholdingRate * 100)}%`,
+              goalAmount: goal.targetNetAmount,
               name: [personal.firstName, personal.lastName].filter(Boolean).join(' '),
               email: personal.email,
               hasLogo: !!activeLogo,
@@ -234,12 +268,12 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
             }}
             saving={saving}
             onApply={() => handleComplete(false)}
-            onBack={() => setStep(3)}
+            onBack={() => setStep(4)}
           />
         )}
 
         {/* Skip all */}
-        {step < 4 && (
+        {step < lastStep && (
           <div className="text-center">
             <button
               onClick={() => handleComplete(true)}
