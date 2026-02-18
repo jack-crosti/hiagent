@@ -902,64 +902,100 @@ export type Database = {
           active_theme: string | null
           animations_enabled: boolean | null
           avatar_url: string | null
+          background_asset_id: string | null
+          background_mode: string | null
+          body_font: string | null
+          business_sale_company_share: number | null
+          business_sale_user_share: number | null
           company_name: string | null
           created_at: string
           effective_tax_rate: number | null
           email: string | null
           first_name: string | null
+          heading_font: string | null
           id: string
           ird_number: string | null
           last_name: string | null
+          lease_company_share: number | null
+          lease_user_share: number | null
           mfa_enabled: boolean | null
           mfa_method: string | null
           owner_user_id: string
           phone: string | null
           probability_threshold: number | null
+          property_sale_company_share: number | null
+          property_sale_user_share: number | null
           title: string | null
           updated_at: string
           user_type: string | null
+          website_url: string | null
+          withholding_rate: number | null
         }
         Insert: {
           active_theme?: string | null
           animations_enabled?: boolean | null
           avatar_url?: string | null
+          background_asset_id?: string | null
+          background_mode?: string | null
+          body_font?: string | null
+          business_sale_company_share?: number | null
+          business_sale_user_share?: number | null
           company_name?: string | null
           created_at?: string
           effective_tax_rate?: number | null
           email?: string | null
           first_name?: string | null
+          heading_font?: string | null
           id?: string
           ird_number?: string | null
           last_name?: string | null
+          lease_company_share?: number | null
+          lease_user_share?: number | null
           mfa_enabled?: boolean | null
           mfa_method?: string | null
           owner_user_id: string
           phone?: string | null
           probability_threshold?: number | null
+          property_sale_company_share?: number | null
+          property_sale_user_share?: number | null
           title?: string | null
           updated_at?: string
           user_type?: string | null
+          website_url?: string | null
+          withholding_rate?: number | null
         }
         Update: {
           active_theme?: string | null
           animations_enabled?: boolean | null
           avatar_url?: string | null
+          background_asset_id?: string | null
+          background_mode?: string | null
+          body_font?: string | null
+          business_sale_company_share?: number | null
+          business_sale_user_share?: number | null
           company_name?: string | null
           created_at?: string
           effective_tax_rate?: number | null
           email?: string | null
           first_name?: string | null
+          heading_font?: string | null
           id?: string
           ird_number?: string | null
           last_name?: string | null
+          lease_company_share?: number | null
+          lease_user_share?: number | null
           mfa_enabled?: boolean | null
           mfa_method?: string | null
           owner_user_id?: string
           phone?: string | null
           probability_threshold?: number | null
+          property_sale_company_share?: number | null
+          property_sale_user_share?: number | null
           title?: string | null
           updated_at?: string
           user_type?: string | null
+          website_url?: string | null
+          withholding_rate?: number | null
         }
         Relationships: []
       }
@@ -1262,6 +1298,7 @@ export type Database = {
     }
     Functions: {
       delete_user_account: { Args: never; Returns: undefined }
+      reset_user_data: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

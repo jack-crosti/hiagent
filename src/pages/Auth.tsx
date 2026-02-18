@@ -26,7 +26,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md animate-fade-in">
         <div className="mb-8 text-center">
           <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
-            Ledger<span className="text-primary">Pilot</span>
+            Hi<span className="text-primary">Agent</span>
           </h1>
           <p className="mt-2 text-muted-foreground">
             Smart finance management for NZ brokers
@@ -74,7 +74,7 @@ function SignInForm() {
     <form onSubmit={handleSubmit}>
       <CardHeader>
         <CardTitle>Welcome back</CardTitle>
-        <CardDescription>Sign in to your LedgerPilot account</CardDescription>
+        <CardDescription>Sign in to your HiAgent account</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
