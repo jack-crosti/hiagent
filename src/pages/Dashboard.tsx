@@ -83,7 +83,7 @@ export default function Dashboard() {
               <Button variant="outline" className="w-full justify-start"><Plus size={16} className="mr-2" /> Add Transaction</Button>
             </Link>
             <Link to="/personal-finance" className="block">
-              <Button variant="outline" className="w-full justify-start"><Target size={16} className="mr-2" /> Create Deal</Button>
+              <Button variant="outline" className="w-full justify-start"><Target size={16} className="mr-2" /> Add New Listing</Button>
             </Link>
             <Link to="/gst" className="block">
               <Button variant="outline" className="w-full justify-start"><Receipt size={16} className="mr-2" /> Check GST Status</Button>

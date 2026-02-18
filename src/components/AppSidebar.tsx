@@ -1,14 +1,17 @@
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useDemo } from '@/contexts/DemoContext';
 import {
   LayoutDashboard, ArrowRightLeft, BookOpen, Receipt,
   CreditCard, Brain, Zap, User, Megaphone, FileText,
-  Palette, Settings, LogOut, ChevronLeft, ChevronRight
+  Palette, Settings, LogOut, ChevronLeft, ChevronRight, Eye, Paintbrush
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,6 +31,8 @@ const navItems = [
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { signOut } = useAuth();
+  const { activeTheme, setTheme, themes } = useTheme();
+  const { isDemoMode, enterDemo, exitDemo } = useDemo();
   const location = useLocation();
 
   return (
@@ -77,8 +82,47 @@ export function AppSidebar() {
 
       <Separator className="mt-2" />
 
+      {/* Theme Switcher */}
+      {!collapsed && (
+        <div className="px-3 py-2">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Paintbrush size={14} className="text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Theme</span>
+          </div>
+          <Select value={activeTheme} onValueChange={setTheme}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {themes.map(t => (
+                <SelectItem key={t.id} value={t.id}>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: `hsl(${t.vars['--primary']})` }} />
+                    {t.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="p-2 space-y-1">
+        {/* Demo toggle */}
+        <button
+          onClick={isDemoMode ? exitDemo : enterDemo}
+          className={cn(
+            'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            isDemoMode
+              ? 'bg-accent/10 text-accent'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+          )}
+        >
+          <Eye size={16} className="shrink-0" />
+          {!collapsed && <span>{isDemoMode ? 'Exit Demo' : 'Try Demo'}</span>}
+        </button>
+
         <button
           onClick={signOut}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-destructive transition-colors"
