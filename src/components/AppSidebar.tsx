@@ -6,12 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard, ArrowRightLeft, BookOpen, Receipt,
   CreditCard, Brain, Zap, User, Megaphone, FileText,
-  Palette, Settings, LogOut, ChevronLeft, ChevronRight, Eye, Paintbrush
+  Palette, Settings, LogOut, ChevronLeft, ChevronRight, Eye, Paintbrush, Moon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const navItems = [
@@ -32,7 +33,7 @@ const navItems = [
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
-  const { activeTheme, setTheme, themes } = useTheme();
+  const { activeTheme, setTheme, themes, isDark, toggleDarkMode } = useTheme();
   const { isDemoMode, enterDemo, exitDemo } = useDemo();
   const location = useLocation();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -96,7 +97,7 @@ export function AppSidebar() {
 
       {/* Theme Switcher — light themes only */}
       {!collapsed && (
-        <div className="px-3 py-2">
+        <div className="px-3 py-2 space-y-2">
           <div className="flex items-center gap-2 mb-1.5">
             <Paintbrush size={14} className="text-muted-foreground" />
             <span className="text-xs font-medium text-muted-foreground">Theme</span>
@@ -105,7 +106,6 @@ export function AppSidebar() {
             value={(() => {
               const lightThemes = themes.filter(t => !t.dark);
               if (lightThemes.find(t => t.id === activeTheme)) return activeTheme;
-              // Map dark theme back to light equivalent for display
               const darkToLight: Record<string, string> = { 'dark-teal': 'teal-warm', 'dark-blue': 'ocean-blue', 'dark-purple': 'royal-purple', 'dark-midnight': 'forest-green' };
               return darkToLight[activeTheme] || 'teal-warm';
             })()}
@@ -125,6 +125,15 @@ export function AppSidebar() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Dark mode toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Moon size={14} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Dark mode</span>
+            </div>
+            <Switch checked={isDark} onCheckedChange={toggleDarkMode} className="scale-90" />
+          </div>
         </div>
       )}
 
