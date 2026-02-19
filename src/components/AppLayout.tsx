@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNav } from '@/components/BottomNav';
@@ -9,6 +10,17 @@ import { QuickSetup } from '@/components/QuickSetup';
 import { UserTypeSelector } from '@/components/UserTypeSelector';
 import { DemoBanner } from '@/components/DemoBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Sun, Moon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+function DarkModeToggle() {
+  const { isDark, toggleDarkMode } = useTheme();
+  return (
+    <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="h-8 w-8" aria-label="Toggle dark mode">
+      {isDark ? <Sun size={16} /> : <Moon size={16} />}
+    </Button>
+  );
+}
 
 /**
  * Checks whether the user's required settings are complete.
@@ -91,6 +103,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen w-full bg-background">
       {!isMobile && <AppSidebar />}
       <main className="flex-1 flex flex-col min-h-screen">
+        {/* Top bar with dark mode toggle */}
+        <div className="flex items-center justify-end px-4 md:px-6 lg:px-8 py-2 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+          <DarkModeToggle />
+        </div>
         <DemoBanner />
         <SetupBanner />
         <div className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-fade-in">

@@ -286,6 +286,7 @@ interface ThemeContextType {
   themes: ThemeDefinition[];
   refreshBrand: () => void;
   isDark: boolean;
+  toggleDarkMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -316,7 +317,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const currentTheme = THEMES.find(t => t.id === activeTheme);
   const isDark = currentTheme?.dark ?? false;
 
-  // Apply base theme preset
+  // Apply base theme preset — set ALL CSS vars so old values are fully overwritten
   useEffect(() => {
     if (!currentTheme) return;
     const root = document.documentElement;
@@ -390,12 +391,34 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  /** Map light ↔ dark theme pairs by base color */
+  const DARK_MAP: Record<string, string> = {
+    'teal-warm': 'dark-teal',
+    'ocean-blue': 'dark-blue',
+    'royal-purple': 'dark-purple',
+    'forest-green': 'dark-midnight',
+    'sunset-coral': 'dark-midnight',
+  };
+  const LIGHT_MAP: Record<string, string> = Object.fromEntries(
+    Object.entries(DARK_MAP).map(([light, dark]) => [dark, light])
+  );
+
+  function toggleDarkMode() {
+    if (isDark) {
+      const lightId = LIGHT_MAP[activeTheme] || 'teal-warm';
+      setTheme(lightId);
+    } else {
+      const darkId = DARK_MAP[activeTheme] || 'dark-teal';
+      setTheme(darkId);
+    }
+  }
+
   function refreshBrand() {
     loadBrand();
   }
 
   return (
-    <ThemeContext.Provider value={{ activeTheme, setTheme, themes: THEMES, refreshBrand, isDark }}>
+    <ThemeContext.Provider value={{ activeTheme, setTheme, themes: THEMES, refreshBrand, isDark, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );
