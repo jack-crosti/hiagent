@@ -48,7 +48,6 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
           >
             <Building2 size={32} className="mx-auto mb-3 text-primary" />
             <p className="font-heading font-semibold">Business Broker</p>
-            <p className="text-xs text-muted-foreground mt-1">Business sales, valuations & deals</p>
           </button>
 
           <button
@@ -62,7 +61,6 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
           >
             <Home size={32} className="mx-auto mb-3 text-primary" />
             <p className="font-heading font-semibold">Real Estate Agent</p>
-            <p className="text-xs text-muted-foreground mt-1">Property sales, leases & listings</p>
           </button>
         </div>
 

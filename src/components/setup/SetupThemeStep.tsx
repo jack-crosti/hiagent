@@ -107,6 +107,9 @@ export function SetupThemeStep({ data, onChange, onNext, onBack }: Props) {
     { value: 'texture', label: 'Texture' },
   ];
 
+  // Keep bgOptions for potential future use but don't render them
+  void bgOptions;
+
   return (
     <Card className="shadow-card animate-slide-up max-h-[80vh] overflow-y-auto">
       <CardHeader>
@@ -191,53 +194,6 @@ export function SetupThemeStep({ data, onChange, onNext, onBack }: Props) {
           )}
         </div>
 
-        {/* Background mode */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Background Style</Label>
-          <div className="flex gap-2">
-            {bgOptions.map((opt) => (
-              <Button
-                key={opt.value}
-                variant={data.backgroundMode === opt.value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onChange({ ...data, backgroundMode: opt.value })}
-              >
-                {opt.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Texture picker */}
-        {data.backgroundMode === 'texture' && (
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Texture</Label>
-            <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto">
-              {TEXTURE_BACKGROUNDS.map((tex) => (
-                <button
-                  key={tex.id}
-                  onClick={() => onChange({ ...data, backgroundTextureId: tex.id })}
-                  className={cn(
-                    'rounded-lg border p-1.5 transition-all',
-                    data.backgroundTextureId === tex.id
-                      ? 'border-primary ring-1 ring-primary/20'
-                      : 'border-border hover:border-primary/30'
-                  )}
-                >
-                  <div
-                    className="h-10 w-full rounded"
-                    style={{
-                      background: tex.css,
-                      backgroundSize: tex.id === 'subtle-dots' ? '16px 16px' : tex.id === 'subtle-grid' ? '20px 20px' : undefined,
-                      backgroundColor: 'hsl(var(--background))',
-                    }}
-                  />
-                  <p className="text-[9px] text-muted-foreground mt-1 text-center truncate">{tex.name}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="flex gap-2 pt-2">
           <Button variant="outline" onClick={onBack} className="flex-1">

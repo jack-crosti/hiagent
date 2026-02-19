@@ -20,6 +20,7 @@ interface Props {
   data: CommissionData;
   onChange: (data: CommissionData) => void;
   onNext: () => void;
+  userType?: string | null;
 }
 
 function SplitSlider({
@@ -56,7 +57,7 @@ function SplitSlider({
   );
 }
 
-export function SetupCommissionStep({ data, onChange, onNext }: Props) {
+export function SetupCommissionStep({ data, onChange, onNext, userType }: Props) {
   const whrPct = Math.round(data.withholdingRate * 100);
 
   return (
@@ -73,13 +74,15 @@ export function SetupCommissionStep({ data, onChange, onNext }: Props) {
       <CardContent className="space-y-6">
         {/* Splits */}
         <div className="space-y-5">
-          <SplitSlider
-            label="Business Sale Split"
-            userShare={data.businessSaleUser}
-            onChange={(v) =>
-              onChange({ ...data, businessSaleUser: v, businessSaleCompany: 1 - v })
-            }
-          />
+          {userType !== 'real_estate_agent' && (
+            <SplitSlider
+              label="Business Sale Split"
+              userShare={data.businessSaleUser}
+              onChange={(v) =>
+                onChange({ ...data, businessSaleUser: v, businessSaleCompany: 1 - v })
+              }
+            />
+          )}
           <SplitSlider
             label="Lease Split"
             userShare={data.leaseUser}
