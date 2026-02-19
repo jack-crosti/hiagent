@@ -21,6 +21,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
   const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [userType, setUserType] = useState<string | null>(null);
 
   // Step 1 - Commission
   const [commission, setCommission] = useState({
@@ -61,6 +62,13 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
     backgroundTextureId: null,
     websiteUrl: '',
   });
+
+  // Fetch user type
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('user_type').eq('owner_user_id', user.id).maybeSingle()
+      .then(({ data }) => { if (data?.user_type) setUserType(data.user_type); });
+  }, [user]);
 
   // Pre-fill email from auth user
   useEffect(() => {
@@ -210,6 +218,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
             data={commission}
             onChange={setCommission}
             onNext={() => setStep(1)}
+            userType={userType}
           />
         )}
 
