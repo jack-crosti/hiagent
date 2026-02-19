@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +39,7 @@ function isSetupIncomplete(profile: Record<string, unknown> | null, setupState: 
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
   const [userType, setUserType] = useState<string | null | undefined>(undefined);
@@ -80,11 +82,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   // Show user type selector first if not set
   if (!userType) {
-    return <UserTypeSelector onComplete={() => setUserType('set')} />;
+    return <UserTypeSelector onComplete={() => { setUserType('set'); }} />;
   }
 
   if (!setupComplete) {
-    return <QuickSetup onComplete={() => setSetupComplete(true)} />;
+    return <QuickSetup onComplete={() => { setSetupComplete(true); navigate('/', { replace: true }); }} />;
   }
 
   return (
