@@ -7,9 +7,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Plus, Paperclip, X } from 'lucide-react';
-import { GST_RATE } from '@/services/commissionService';
+import { GST_RATE, formatNZDPrecise } from '@/services/commissionService';
 import { useToast } from '@/hooks/use-toast';
 
 interface TransactionDialogProps {
@@ -31,6 +32,7 @@ export function TransactionDialog({ open, onOpenChange, transaction, onSaved }: 
   const [newBankAccName, setNewBankAccName] = useState('');
   const [showNewBank, setShowNewBank] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [gstIncluded, setGstIncluded] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     description: '',
@@ -66,6 +68,7 @@ export function TransactionDialog({ open, onOpenChange, transaction, onSaved }: 
         reference: transaction.reference || '',
         gst_amount: transaction.gst_amount?.toString() || '',
       });
+      setGstIncluded(true);
     } else {
       setForm({
         description: '', amount: '', type: 'debit',
@@ -73,18 +76,34 @@ export function TransactionDialog({ open, onOpenChange, transaction, onSaved }: 
         category_id: '', bank_account_id: '', reference: '', gst_amount: '',
       });
       setAttachments([]);
+      setGstIncluded(true);
     }
     setShowNewCat(false);
     setShowNewBank(false);
   }, [transaction, open]);
 
+  // Auto-calculate GST based on toggle
   useEffect(() => {
     const amt = parseFloat(form.amount);
-    if (amt > 0) {
+    if (!amt || amt <= 0) {
+      setForm(f => ({ ...f, gst_amount: '' }));
+      return;
+    }
+    if (gstIncluded) {
+      // Amount includes GST → extract GST component
       const gst = amt * GST_RATE / (1 + GST_RATE);
       setForm(f => ({ ...f, gst_amount: gst.toFixed(2) }));
+    } else {
+      // Amount excludes GST → GST is on top
+      const gst = amt * GST_RATE;
+      setForm(f => ({ ...f, gst_amount: gst.toFixed(2) }));
     }
-  }, [form.amount]);
+  }, [form.amount, gstIncluded]);
+
+  const amt = parseFloat(form.amount) || 0;
+  const gstAmt = parseFloat(form.gst_amount) || 0;
+  const amtExclGst = gstIncluded ? amt - gstAmt : amt;
+  const amtInclGst = gstIncluded ? amt : amt + gstAmt;
 
   async function handleAddCategory() {
     if (!user || !newCatName.trim()) return;
@@ -139,17 +158,16 @@ export function TransactionDialog({ open, onOpenChange, transaction, onSaved }: 
     if (!user || !form.description.trim() || !form.amount) return;
     setSaving(true);
 
-    const amount = parseFloat(form.amount);
     const row = {
       owner_user_id: user.id,
       description: form.description,
-      amount: form.type === 'debit' ? -Math.abs(amount) : Math.abs(amount),
+      amount: form.type === 'debit' ? -Math.abs(amtInclGst) : Math.abs(amtInclGst),
       type: form.type,
       date: form.date,
       category_id: form.category_id || null,
       bank_account_id: form.bank_account_id || null,
       reference: form.reference || null,
-      gst_amount: parseFloat(form.gst_amount) || 0,
+      gst_amount: gstAmt,
     };
 
     if (transaction?.id) {
@@ -199,16 +217,43 @@ export function TransactionDialog({ open, onOpenChange, transaction, onSaved }: 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Amount (NZD)</Label>
-              <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
+          {/* GST Toggle */}
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <Label className="text-sm font-medium">GST Treatment</Label>
+              <p className="text-xs text-muted-foreground">
+                {gstIncluded ? 'Amount entered includes GST' : 'Amount entered excludes GST'}
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label>GST (auto)</Label>
-              <Input type="number" step="0.01" placeholder="0.00" value={form.gst_amount} onChange={e => setForm(f => ({ ...f, gst_amount: e.target.value }))} />
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Excl</span>
+              <Switch checked={gstIncluded} onCheckedChange={setGstIncluded} />
+              <span className="text-xs text-muted-foreground">Incl</span>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label>Amount (NZD) — {gstIncluded ? 'GST Included' : 'GST Excluded'}</Label>
+            <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
+          </div>
+
+          {/* GST Breakdown */}
+          {amt > 0 && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Amount excl. GST</span>
+                <span className="font-medium">{formatNZDPrecise(amtExclGst)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">GST (15%)</span>
+                <span className="font-medium">{formatNZDPrecise(gstAmt)}</span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-1.5">
+                <span className="font-medium">Amount incl. GST</span>
+                <span className="font-semibold text-foreground">{formatNZDPrecise(amtInclGst)}</span>
+              </div>
+            </div>
+          )}
 
           {/* Category with New option */}
           <div className="space-y-2">
