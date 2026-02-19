@@ -38,18 +38,24 @@ export function IncomeExpenseChart({ transactions }: { transactions: Transaction
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} className="text-muted-foreground" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} stroke="hsl(var(--border))" />
+              <YAxis tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} stroke="hsl(var(--border))" />
               <Tooltip
                 formatter={(value: number) =>
                   new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 0 }).format(value)
                 }
-                contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
+                contentStyle={{
+                  borderRadius: 8,
+                  border: '1px solid hsl(var(--border))',
+                  background: 'hsl(var(--card))',
+                  color: 'hsl(var(--card-foreground))',
+                }}
+                labelStyle={{ color: 'hsl(var(--card-foreground))' }}
               />
-              <Legend />
-              <Bar dataKey="income" name="Income" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expenses" name="Expenses" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+              <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
+              <Bar dataKey="income" name="Income" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expenses" name="Expenses" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

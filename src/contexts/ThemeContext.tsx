@@ -7,162 +7,218 @@ export interface ThemeDefinition {
   name: string;
   description: string;
   dark?: boolean;
+  /** The corresponding light/dark pair id */
+  pairId?: string;
   vars: Record<string, string>;
 }
 
+/**
+ * Each "color family" has a light + dark variant.
+ * The sidebar selector only shows light IDs;
+ * toggling dark mode swaps to the paired dark variant.
+ */
 export const THEMES: ThemeDefinition[] = [
+  // ──────────── LIGHT THEMES ────────────
   {
     id: 'teal-warm',
     name: 'Teal & Warm',
-    description: 'Default — friendly teal with warm sand tones',
+    description: 'Friendly teal with warm sand tones',
+    pairId: 'dark-teal',
     vars: {
       '--primary': '174 58% 39%',
       '--primary-foreground': '0 0% 100%',
       '--accent': '12 76% 61%',
       '--accent-foreground': '0 0% 100%',
-      '--secondary': '36 33% 94%',
+      '--secondary': '36 33% 92%',
       '--secondary-foreground': '220 20% 14%',
-      '--background': '40 33% 98%',
+      '--background': '40 33% 97%',
       '--foreground': '220 20% 14%',
       '--card': '0 0% 100%',
       '--card-foreground': '220 20% 14%',
       '--popover': '0 0% 100%',
       '--popover-foreground': '220 20% 14%',
       '--muted': '40 20% 94%',
-      '--muted-foreground': '220 10% 46%',
-      '--border': '220 13% 90%',
-      '--input': '220 13% 90%',
-      '--sidebar-background': '0 0% 100%',
-      '--sidebar-accent': '40 20% 96%',
+      '--muted-foreground': '220 10% 42%',
+      '--border': '220 13% 88%',
+      '--input': '220 13% 88%',
+      '--destructive': '0 72% 51%',
+      '--destructive-foreground': '0 0% 100%',
+      '--sidebar-background': '174 30% 15%',
+      '--sidebar-accent': '174 25% 22%',
+      // Chart colors — vivid, high contrast on white
+      '--chart-1': '174 58% 39%',
+      '--chart-2': '12 76% 55%',
+      '--chart-3': '38 92% 50%',
+      '--chart-4': '260 50% 55%',
+      '--chart-5': '330 65% 50%',
     },
   },
   {
     id: 'ocean-blue',
     name: 'Ocean Blue',
-    description: 'Professional blue with cool grey accents',
+    description: 'Professional blue with golden accents',
+    pairId: 'dark-blue',
     vars: {
       '--primary': '210 80% 45%',
       '--primary-foreground': '0 0% 100%',
       '--accent': '38 92% 50%',
       '--accent-foreground': '0 0% 100%',
-      '--secondary': '210 20% 94%',
-      '--secondary-foreground': '210 30% 14%',
-      '--background': '210 20% 98%',
-      '--foreground': '210 30% 14%',
+      '--secondary': '210 25% 92%',
+      '--secondary-foreground': '210 30% 12%',
+      '--background': '210 25% 97%',
+      '--foreground': '210 30% 12%',
       '--card': '0 0% 100%',
-      '--card-foreground': '210 30% 14%',
+      '--card-foreground': '210 30% 12%',
       '--popover': '0 0% 100%',
-      '--popover-foreground': '210 30% 14%',
-      '--muted': '210 20% 94%',
-      '--muted-foreground': '210 10% 46%',
-      '--border': '210 13% 90%',
-      '--input': '210 13% 90%',
-      '--sidebar-background': '210 30% 12%',
-      '--sidebar-accent': '210 25% 18%',
+      '--popover-foreground': '210 30% 12%',
+      '--muted': '210 20% 93%',
+      '--muted-foreground': '210 15% 40%',
+      '--border': '210 15% 86%',
+      '--input': '210 15% 86%',
+      '--destructive': '0 72% 51%',
+      '--destructive-foreground': '0 0% 100%',
+      '--sidebar-background': '210 35% 12%',
+      '--sidebar-accent': '210 30% 18%',
+      '--chart-1': '210 80% 45%',
+      '--chart-2': '38 92% 50%',
+      '--chart-3': '160 55% 40%',
+      '--chart-4': '340 60% 55%',
+      '--chart-5': '280 45% 55%',
     },
   },
   {
     id: 'forest-green',
     name: 'Forest Green',
-    description: 'Earthy green with warm amber highlights',
+    description: 'Earthy green with amber highlights',
+    pairId: 'dark-green',
     vars: {
-      '--primary': '152 56% 35%',
+      '--primary': '152 56% 32%',
       '--primary-foreground': '0 0% 100%',
-      '--accent': '24 85% 56%',
+      '--accent': '24 85% 52%',
       '--accent-foreground': '0 0% 100%',
-      '--secondary': '80 20% 93%',
-      '--secondary-foreground': '150 20% 14%',
-      '--background': '80 15% 97%',
-      '--foreground': '150 20% 14%',
-      '--card': '0 0% 100%',
-      '--card-foreground': '150 20% 14%',
-      '--popover': '0 0% 100%',
-      '--popover-foreground': '150 20% 14%',
-      '--muted': '80 15% 93%',
-      '--muted-foreground': '150 10% 46%',
-      '--border': '150 10% 90%',
-      '--input': '150 10% 90%',
-      '--sidebar-background': '150 25% 10%',
-      '--sidebar-accent': '150 20% 16%',
+      '--secondary': '90 20% 91%',
+      '--secondary-foreground': '150 25% 12%',
+      '--background': '80 18% 96%',
+      '--foreground': '150 25% 12%',
+      '--card': '60 15% 99%',
+      '--card-foreground': '150 25% 12%',
+      '--popover': '60 15% 99%',
+      '--popover-foreground': '150 25% 12%',
+      '--muted': '80 15% 92%',
+      '--muted-foreground': '150 12% 38%',
+      '--border': '150 12% 85%',
+      '--input': '150 12% 85%',
+      '--destructive': '0 72% 51%',
+      '--destructive-foreground': '0 0% 100%',
+      '--sidebar-background': '150 30% 10%',
+      '--sidebar-accent': '150 25% 16%',
+      '--chart-1': '152 56% 35%',
+      '--chart-2': '24 85% 52%',
+      '--chart-3': '200 60% 45%',
+      '--chart-4': '340 55% 50%',
+      '--chart-5': '52 75% 45%',
     },
   },
   {
     id: 'royal-purple',
     name: 'Royal Purple',
     description: 'Rich purple with rose gold accents',
+    pairId: 'dark-purple',
     vars: {
-      '--primary': '270 50% 50%',
+      '--primary': '270 55% 48%',
       '--primary-foreground': '0 0% 100%',
-      '--accent': '340 65% 60%',
+      '--accent': '340 65% 55%',
       '--accent-foreground': '0 0% 100%',
-      '--secondary': '270 15% 94%',
-      '--secondary-foreground': '270 30% 14%',
-      '--background': '270 10% 98%',
-      '--foreground': '270 30% 14%',
-      '--card': '0 0% 100%',
-      '--card-foreground': '270 30% 14%',
-      '--popover': '0 0% 100%',
-      '--popover-foreground': '270 30% 14%',
-      '--muted': '270 10% 93%',
-      '--muted-foreground': '270 10% 46%',
-      '--border': '270 10% 90%',
-      '--input': '270 10% 90%',
-      '--sidebar-background': '270 30% 10%',
-      '--sidebar-accent': '270 25% 16%',
+      '--secondary': '270 20% 92%',
+      '--secondary-foreground': '270 30% 12%',
+      '--background': '270 15% 97%',
+      '--foreground': '270 30% 12%',
+      '--card': '280 10% 100%',
+      '--card-foreground': '270 30% 12%',
+      '--popover': '280 10% 100%',
+      '--popover-foreground': '270 30% 12%',
+      '--muted': '270 12% 92%',
+      '--muted-foreground': '270 12% 40%',
+      '--border': '270 12% 86%',
+      '--input': '270 12% 86%',
+      '--destructive': '0 72% 51%',
+      '--destructive-foreground': '0 0% 100%',
+      '--sidebar-background': '270 35% 10%',
+      '--sidebar-accent': '270 30% 16%',
+      '--chart-1': '270 55% 50%',
+      '--chart-2': '340 65% 55%',
+      '--chart-3': '38 80% 50%',
+      '--chart-4': '170 55% 40%',
+      '--chart-5': '210 60% 50%',
     },
   },
   {
     id: 'sunset-coral',
     name: 'Sunset Coral',
-    description: 'Vibrant coral with warm terracotta tones',
+    description: 'Vibrant coral with teal accents',
+    pairId: 'dark-coral',
     vars: {
-      '--primary': '12 76% 52%',
+      '--primary': '12 76% 48%',
       '--primary-foreground': '0 0% 100%',
-      '--accent': '174 58% 39%',
+      '--accent': '174 58% 36%',
       '--accent-foreground': '0 0% 100%',
-      '--secondary': '20 30% 94%',
-      '--secondary-foreground': '20 25% 14%',
-      '--background': '20 25% 98%',
-      '--foreground': '20 25% 14%',
-      '--card': '0 0% 100%',
-      '--card-foreground': '20 25% 14%',
-      '--popover': '0 0% 100%',
-      '--popover-foreground': '20 25% 14%',
-      '--muted': '20 20% 93%',
-      '--muted-foreground': '20 10% 46%',
-      '--border': '20 10% 90%',
-      '--input': '20 10% 90%',
-      '--sidebar-background': '15 30% 10%',
-      '--sidebar-accent': '15 25% 16%',
+      '--secondary': '20 35% 92%',
+      '--secondary-foreground': '15 30% 12%',
+      '--background': '20 30% 97%',
+      '--foreground': '15 30% 12%',
+      '--card': '15 20% 99%',
+      '--card-foreground': '15 30% 12%',
+      '--popover': '15 20% 99%',
+      '--popover-foreground': '15 30% 12%',
+      '--muted': '20 22% 92%',
+      '--muted-foreground': '15 15% 38%',
+      '--border': '20 15% 85%',
+      '--input': '20 15% 85%',
+      '--destructive': '0 72% 51%',
+      '--destructive-foreground': '0 0% 100%',
+      '--sidebar-background': '15 35% 10%',
+      '--sidebar-accent': '15 30% 16%',
+      '--chart-1': '12 76% 50%',
+      '--chart-2': '174 58% 39%',
+      '--chart-3': '38 85% 50%',
+      '--chart-4': '260 50% 55%',
+      '--chart-5': '330 60% 52%',
     },
   },
-  // --- Dark themes ---
+
+  // ──────────── DARK THEMES ────────────
   {
     id: 'dark-teal',
     name: 'Dark Teal',
     description: 'Dark mode with teal accents',
     dark: true,
+    pairId: 'teal-warm',
     vars: {
-      '--primary': '174 58% 45%',
-      '--primary-foreground': '220 20% 8%',
-      '--accent': '12 76% 61%',
-      '--accent-foreground': '0 0% 100%',
-      '--secondary': '220 14% 16%',
-      '--secondary-foreground': '40 20% 96%',
-      '--background': '220 20% 8%',
-      '--foreground': '40 20% 96%',
-      '--card': '220 18% 11%',
-      '--card-foreground': '40 20% 96%',
-      '--popover': '220 18% 11%',
-      '--popover-foreground': '40 20% 96%',
-      '--muted': '220 14% 16%',
-      '--muted-foreground': '220 10% 60%',
-      '--destructive': '0 62% 30%',
-      '--destructive-foreground': '40 20% 96%',
-      '--border': '220 14% 18%',
-      '--input': '220 14% 18%',
-      '--sidebar-background': '220 20% 6%',
-      '--sidebar-accent': '220 14% 14%',
+      '--primary': '174 60% 50%',
+      '--primary-foreground': '0 0% 5%',
+      '--accent': '12 80% 65%',
+      '--accent-foreground': '0 0% 5%',
+      '--secondary': '180 10% 18%',
+      '--secondary-foreground': '174 15% 90%',
+      '--background': '180 15% 7%',
+      '--foreground': '174 10% 92%',
+      '--card': '180 12% 10%',
+      '--card-foreground': '174 10% 92%',
+      '--popover': '180 12% 10%',
+      '--popover-foreground': '174 10% 92%',
+      '--muted': '180 10% 15%',
+      '--muted-foreground': '174 10% 60%',
+      '--destructive': '0 62% 40%',
+      '--destructive-foreground': '0 0% 95%',
+      '--border': '180 10% 18%',
+      '--input': '180 10% 18%',
+      '--sidebar-background': '180 15% 5%',
+      '--sidebar-accent': '180 12% 12%',
+      '--chart-1': '174 65% 55%',
+      '--chart-2': '12 80% 65%',
+      '--chart-3': '38 85% 60%',
+      '--chart-4': '270 50% 65%',
+      '--chart-5': '330 60% 60%',
     },
   },
   {
@@ -170,27 +226,67 @@ export const THEMES: ThemeDefinition[] = [
     name: 'Dark Blue',
     description: 'Dark mode with ocean blue accents',
     dark: true,
+    pairId: 'ocean-blue',
     vars: {
-      '--primary': '210 80% 55%',
-      '--primary-foreground': '220 20% 8%',
-      '--accent': '38 92% 50%',
-      '--accent-foreground': '0 0% 100%',
-      '--secondary': '210 14% 16%',
-      '--secondary-foreground': '210 20% 94%',
-      '--background': '215 22% 8%',
-      '--foreground': '210 20% 94%',
-      '--card': '215 20% 11%',
-      '--card-foreground': '210 20% 94%',
-      '--popover': '215 20% 11%',
-      '--popover-foreground': '210 20% 94%',
-      '--muted': '215 14% 16%',
-      '--muted-foreground': '210 10% 58%',
-      '--destructive': '0 62% 30%',
-      '--destructive-foreground': '210 20% 94%',
-      '--border': '215 14% 18%',
-      '--input': '215 14% 18%',
-      '--sidebar-background': '215 22% 6%',
-      '--sidebar-accent': '215 14% 14%',
+      '--primary': '210 85% 58%',
+      '--primary-foreground': '0 0% 5%',
+      '--accent': '38 92% 58%',
+      '--accent-foreground': '0 0% 5%',
+      '--secondary': '215 15% 18%',
+      '--secondary-foreground': '210 20% 90%',
+      '--background': '215 25% 7%',
+      '--foreground': '210 15% 92%',
+      '--card': '215 22% 10%',
+      '--card-foreground': '210 15% 92%',
+      '--popover': '215 22% 10%',
+      '--popover-foreground': '210 15% 92%',
+      '--muted': '215 15% 15%',
+      '--muted-foreground': '210 12% 58%',
+      '--destructive': '0 62% 40%',
+      '--destructive-foreground': '0 0% 95%',
+      '--border': '215 15% 18%',
+      '--input': '215 15% 18%',
+      '--sidebar-background': '215 25% 5%',
+      '--sidebar-accent': '215 18% 12%',
+      '--chart-1': '210 85% 60%',
+      '--chart-2': '38 92% 60%',
+      '--chart-3': '160 60% 50%',
+      '--chart-4': '340 60% 60%',
+      '--chart-5': '280 50% 62%',
+    },
+  },
+  {
+    id: 'dark-green',
+    name: 'Dark Green',
+    description: 'Dark mode with forest green accents',
+    dark: true,
+    pairId: 'forest-green',
+    vars: {
+      '--primary': '152 55% 45%',
+      '--primary-foreground': '0 0% 5%',
+      '--accent': '24 85% 60%',
+      '--accent-foreground': '0 0% 5%',
+      '--secondary': '150 12% 18%',
+      '--secondary-foreground': '150 15% 90%',
+      '--background': '150 18% 7%',
+      '--foreground': '150 10% 92%',
+      '--card': '150 15% 10%',
+      '--card-foreground': '150 10% 92%',
+      '--popover': '150 15% 10%',
+      '--popover-foreground': '150 10% 92%',
+      '--muted': '150 10% 15%',
+      '--muted-foreground': '150 10% 58%',
+      '--destructive': '0 62% 40%',
+      '--destructive-foreground': '0 0% 95%',
+      '--border': '150 10% 18%',
+      '--input': '150 10% 18%',
+      '--sidebar-background': '150 18% 5%',
+      '--sidebar-accent': '150 12% 12%',
+      '--chart-1': '152 55% 50%',
+      '--chart-2': '24 85% 60%',
+      '--chart-3': '200 65% 55%',
+      '--chart-4': '340 55% 60%',
+      '--chart-5': '52 70% 55%',
     },
   },
   {
@@ -198,58 +294,83 @@ export const THEMES: ThemeDefinition[] = [
     name: 'Dark Purple',
     description: 'Dark mode with royal purple accents',
     dark: true,
+    pairId: 'royal-purple',
     vars: {
-      '--primary': '270 50% 60%',
-      '--primary-foreground': '270 20% 8%',
-      '--accent': '340 65% 60%',
-      '--accent-foreground': '0 0% 100%',
-      '--secondary': '270 14% 16%',
-      '--secondary-foreground': '270 15% 94%',
-      '--background': '270 18% 8%',
-      '--foreground': '270 10% 94%',
-      '--card': '270 16% 11%',
-      '--card-foreground': '270 10% 94%',
-      '--popover': '270 16% 11%',
-      '--popover-foreground': '270 10% 94%',
-      '--muted': '270 14% 16%',
-      '--muted-foreground': '270 10% 58%',
-      '--destructive': '0 62% 30%',
-      '--destructive-foreground': '270 10% 94%',
-      '--border': '270 14% 18%',
-      '--input': '270 14% 18%',
-      '--sidebar-background': '270 18% 6%',
-      '--sidebar-accent': '270 14% 14%',
+      '--primary': '270 55% 62%',
+      '--primary-foreground': '0 0% 5%',
+      '--accent': '340 65% 62%',
+      '--accent-foreground': '0 0% 5%',
+      '--secondary': '270 12% 18%',
+      '--secondary-foreground': '270 12% 90%',
+      '--background': '270 20% 7%',
+      '--foreground': '270 8% 92%',
+      '--card': '270 18% 10%',
+      '--card-foreground': '270 8% 92%',
+      '--popover': '270 18% 10%',
+      '--popover-foreground': '270 8% 92%',
+      '--muted': '270 12% 15%',
+      '--muted-foreground': '270 8% 58%',
+      '--destructive': '0 62% 40%',
+      '--destructive-foreground': '0 0% 95%',
+      '--border': '270 12% 18%',
+      '--input': '270 12% 18%',
+      '--sidebar-background': '270 20% 5%',
+      '--sidebar-accent': '270 15% 12%',
+      '--chart-1': '270 55% 65%',
+      '--chart-2': '340 65% 62%',
+      '--chart-3': '38 80% 58%',
+      '--chart-4': '170 55% 50%',
+      '--chart-5': '210 60% 58%',
     },
   },
   {
-    id: 'dark-midnight',
-    name: 'Midnight',
-    description: 'Pure dark with minimal contrast',
+    id: 'dark-coral',
+    name: 'Dark Coral',
+    description: 'Dark mode with coral accents',
     dark: true,
+    pairId: 'sunset-coral',
     vars: {
-      '--primary': '174 58% 45%',
+      '--primary': '12 80% 58%',
       '--primary-foreground': '0 0% 5%',
-      '--accent': '38 80% 55%',
-      '--accent-foreground': '0 0% 100%',
-      '--secondary': '0 0% 14%',
-      '--secondary-foreground': '0 0% 90%',
-      '--background': '0 0% 5%',
-      '--foreground': '0 0% 92%',
-      '--card': '0 0% 8%',
-      '--card-foreground': '0 0% 92%',
-      '--popover': '0 0% 8%',
-      '--popover-foreground': '0 0% 92%',
-      '--muted': '0 0% 14%',
-      '--muted-foreground': '0 0% 55%',
-      '--destructive': '0 62% 30%',
-      '--destructive-foreground': '0 0% 92%',
-      '--border': '0 0% 16%',
-      '--input': '0 0% 16%',
-      '--sidebar-background': '0 0% 4%',
-      '--sidebar-accent': '0 0% 12%',
+      '--accent': '174 60% 48%',
+      '--accent-foreground': '0 0% 5%',
+      '--secondary': '15 12% 18%',
+      '--secondary-foreground': '15 15% 90%',
+      '--background': '15 18% 7%',
+      '--foreground': '15 10% 92%',
+      '--card': '15 15% 10%',
+      '--card-foreground': '15 10% 92%',
+      '--popover': '15 15% 10%',
+      '--popover-foreground': '15 10% 92%',
+      '--muted': '15 10% 15%',
+      '--muted-foreground': '15 8% 58%',
+      '--destructive': '0 62% 40%',
+      '--destructive-foreground': '0 0% 95%',
+      '--border': '15 10% 18%',
+      '--input': '15 10% 18%',
+      '--sidebar-background': '15 18% 5%',
+      '--sidebar-accent': '15 12% 12%',
+      '--chart-1': '12 80% 62%',
+      '--chart-2': '174 60% 50%',
+      '--chart-3': '38 85% 58%',
+      '--chart-4': '260 50% 62%',
+      '--chart-5': '330 60% 58%',
     },
   },
 ];
+
+/** Build maps from pairId for light↔dark switching */
+const DARK_MAP: Record<string, string> = {};
+const LIGHT_MAP: Record<string, string> = {};
+THEMES.forEach(t => {
+  if (!t.dark && t.pairId) DARK_MAP[t.id] = t.pairId;
+  if (t.dark && t.pairId) LIGHT_MAP[t.id] = t.pairId;
+});
+
+/** Get the light base id for any theme */
+export function getLightBase(themeId: string): string {
+  return LIGHT_MAP[themeId] || themeId;
+}
 
 /** Convert hex (#RRGGBB) to HSL string "H S% L%" */
 function hexToHsl(hex: string): string {
@@ -283,6 +404,8 @@ interface BrandColors {
 interface ThemeContextType {
   activeTheme: string;
   setTheme: (themeId: string) => void;
+  /** Set theme by light base id — automatically resolves to dark variant if dark mode is on */
+  setColorFamily: (lightId: string) => void;
   themes: ThemeDefinition[];
   refreshBrand: () => void;
   isDark: boolean;
@@ -317,47 +440,39 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const currentTheme = THEMES.find(t => t.id === activeTheme);
   const isDark = currentTheme?.dark ?? false;
 
-  // Apply base theme preset — set ALL CSS vars so old values are fully overwritten
+  // Apply theme CSS vars
   useEffect(() => {
     if (!currentTheme) return;
     const root = document.documentElement;
 
-    // Toggle dark class
     if (currentTheme.dark) {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
 
-    // Apply all vars from the theme
+    // Apply ALL vars from the theme definition
     Object.entries(currentTheme.vars).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
 
-    // Ring & sidebar primary always mirror --primary
+    // Mirror ring/sidebar primary
     root.style.setProperty('--ring', currentTheme.vars['--primary']);
     root.style.setProperty('--sidebar-primary', currentTheme.vars['--primary']);
     root.style.setProperty('--sidebar-ring', currentTheme.vars['--primary']);
 
-    // Sidebar foreground logic
+    // Sidebar text colors
     if (currentTheme.dark) {
-      root.style.setProperty('--sidebar-foreground', '40 20% 90%');
+      root.style.setProperty('--sidebar-foreground', currentTheme.vars['--foreground']);
       root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
-      root.style.setProperty('--sidebar-accent-foreground', '40 20% 90%');
-      root.style.setProperty('--sidebar-border', currentTheme.vars['--sidebar-accent'] || '220 14% 14%');
+      root.style.setProperty('--sidebar-accent-foreground', currentTheme.vars['--foreground']);
+      root.style.setProperty('--sidebar-border', currentTheme.vars['--border']);
     } else {
-      const isDarkSidebar = currentTheme.vars['--sidebar-background'] !== '0 0% 100%';
-      if (isDarkSidebar) {
-        root.style.setProperty('--sidebar-foreground', '40 20% 90%');
-        root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
-        root.style.setProperty('--sidebar-accent-foreground', '40 20% 90%');
-        root.style.setProperty('--sidebar-border', currentTheme.vars['--sidebar-accent']);
-      } else {
-        root.style.setProperty('--sidebar-foreground', '220 20% 14%');
-        root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
-        root.style.setProperty('--sidebar-accent-foreground', '220 20% 14%');
-        root.style.setProperty('--sidebar-border', '220 13% 92%');
-      }
+      // Light themes always have a dark sidebar
+      root.style.setProperty('--sidebar-foreground', '0 0% 92%');
+      root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
+      root.style.setProperty('--sidebar-accent-foreground', '0 0% 88%');
+      root.style.setProperty('--sidebar-border', currentTheme.vars['--sidebar-accent']);
     }
   }, [activeTheme, currentTheme]);
 
@@ -384,32 +499,32 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [brandColors, activeTheme]);
 
-  function setTheme(themeId: string) {
+  function persistTheme(themeId: string) {
     setActiveTheme(themeId);
     if (user) {
       supabase.from('profiles').update({ active_theme: themeId }).eq('owner_user_id', user.id);
     }
   }
 
-  /** Map light ↔ dark theme pairs by base color */
-  const DARK_MAP: Record<string, string> = {
-    'teal-warm': 'dark-teal',
-    'ocean-blue': 'dark-blue',
-    'royal-purple': 'dark-purple',
-    'forest-green': 'dark-midnight',
-    'sunset-coral': 'dark-midnight',
-  };
-  const LIGHT_MAP: Record<string, string> = Object.fromEntries(
-    Object.entries(DARK_MAP).map(([light, dark]) => [dark, light])
-  );
+  /** Set theme directly by id */
+  function setTheme(themeId: string) {
+    persistTheme(themeId);
+  }
+
+  /** Set theme by light family id — resolves to dark variant if currently dark */
+  function setColorFamily(lightId: string) {
+    if (isDark) {
+      persistTheme(DARK_MAP[lightId] || lightId);
+    } else {
+      persistTheme(lightId);
+    }
+  }
 
   function toggleDarkMode() {
     if (isDark) {
-      const lightId = LIGHT_MAP[activeTheme] || 'teal-warm';
-      setTheme(lightId);
+      persistTheme(LIGHT_MAP[activeTheme] || 'teal-warm');
     } else {
-      const darkId = DARK_MAP[activeTheme] || 'dark-teal';
-      setTheme(darkId);
+      persistTheme(DARK_MAP[activeTheme] || 'dark-teal');
     }
   }
 
@@ -418,7 +533,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ activeTheme, setTheme, themes: THEMES, refreshBrand, isDark, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ activeTheme, setTheme, setColorFamily, themes: THEMES, refreshBrand, isDark, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );
