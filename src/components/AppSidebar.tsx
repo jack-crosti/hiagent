@@ -94,14 +94,23 @@ export function AppSidebar() {
 
       <Separator className="mt-2" />
 
-      {/* Theme Switcher */}
+      {/* Theme Switcher — light themes only */}
       {!collapsed && (
         <div className="px-3 py-2">
           <div className="flex items-center gap-2 mb-1.5">
             <Paintbrush size={14} className="text-muted-foreground" />
             <span className="text-xs font-medium text-muted-foreground">Theme</span>
           </div>
-          <Select value={activeTheme} onValueChange={setTheme}>
+          <Select
+            value={(() => {
+              const lightThemes = themes.filter(t => !t.dark);
+              if (lightThemes.find(t => t.id === activeTheme)) return activeTheme;
+              // Map dark theme back to light equivalent for display
+              const darkToLight: Record<string, string> = { 'dark-teal': 'teal-warm', 'dark-blue': 'ocean-blue', 'dark-purple': 'royal-purple', 'dark-midnight': 'forest-green' };
+              return darkToLight[activeTheme] || 'teal-warm';
+            })()}
+            onValueChange={setTheme}
+          >
             <SelectTrigger className="h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -110,17 +119,6 @@ export function AppSidebar() {
                 <SelectItem key={t.id} value={t.id}>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full" style={{ backgroundColor: `hsl(${t.vars['--primary']})` }} />
-                    {t.name}
-                  </div>
-                </SelectItem>
-              ))}
-              <div className="px-2 py-1.5">
-                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Dark</span>
-              </div>
-              {themes.filter(t => t.dark).map(t => (
-                <SelectItem key={t.id} value={t.id}>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full border border-border" style={{ backgroundColor: `hsl(${t.vars['--primary']})` }} />
                     {t.name}
                   </div>
                 </SelectItem>
