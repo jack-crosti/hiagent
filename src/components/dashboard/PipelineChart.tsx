@@ -9,12 +9,12 @@ interface Deal {
   probability: number | null;
 }
 
-const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--accent))',
-  'hsl(168, 50%, 45%)',
-  'hsl(220, 50%, 55%)',
-  'hsl(280, 40%, 55%)',
+const CHART_COLORS = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
 ];
 
 export function PipelineChart({ deals }: { deals: Deal[] }) {
@@ -46,16 +46,22 @@ export function PipelineChart({ deals }: { deals: Deal[] }) {
                 dataKey="value"
               >
                 {data.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip
                 formatter={(value: number) =>
                   new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 0 }).format(value)
                 }
-                contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
+                contentStyle={{
+                  borderRadius: 8,
+                  border: '1px solid hsl(var(--border))',
+                  background: 'hsl(var(--card))',
+                  color: 'hsl(var(--card-foreground))',
+                }}
+                labelStyle={{ color: 'hsl(var(--card-foreground))' }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
