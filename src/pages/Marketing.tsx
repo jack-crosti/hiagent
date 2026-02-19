@@ -8,46 +8,61 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Megaphone, Plus, Calendar, Mail, Lightbulb, Sparkles, Copy, Check } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Megaphone, Plus, Calendar, Mail, Lightbulb, Sparkles, Copy, Check,
+  Smile, BriefcaseBusiness, Wand2, RefreshCw, Palette, Zap
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-const WEEKLY_TEMPLATES = [
-  { day: 'Monday', action: 'Post market insight on LinkedIn', platform: 'LinkedIn', type: 'content' },
-  { day: 'Tuesday', action: 'Follow up 3 warm leads via email', platform: 'Email', type: 'outreach' },
-  { day: 'Wednesday', action: 'Share listing photo on Instagram', platform: 'Instagram', type: 'content' },
-  { day: 'Thursday', action: 'Attend networking event or BNI', platform: 'In-person', type: 'networking' },
-  { day: 'Friday', action: 'Send weekly newsletter to database', platform: 'Email', type: 'email' },
-];
-
-const CONTENT_IDEAS = [
-  { title: 'Market Update', desc: 'Share latest NZ business sale stats & trends', tags: ['LinkedIn', 'Blog'] },
-  { title: 'Success Story', desc: 'Client testimonial or recent deal closure', tags: ['LinkedIn', 'Instagram'] },
-  { title: 'Valuation Tips', desc: 'How business owners can prepare for sale', tags: ['Blog', 'Email'] },
-  { title: 'Industry Spotlight', desc: 'Sector analysis (hospitality, retail, etc.)', tags: ['LinkedIn', 'Newsletter'] },
-  { title: 'Behind the Scenes', desc: 'A day in the life of a broker', tags: ['Instagram', 'TikTok'] },
-];
 
 const GOAL_TYPES = [
   'New listing launch', 'Listing just sold', 'Buyer wanted',
   'Vendor lead generation', 'Brand awareness', 'Educational for sellers',
   'Educational for buyers', 'Testimonial or case study', 'Behind the scenes',
+  'Open home promotion', 'Price reduction', 'Market commentary',
 ];
 
 const STYLE_MODES = [
-  { id: 'direct', label: 'Direct and punchy' },
-  { id: 'educational', label: 'Educational and credible' },
-  { id: 'personal', label: 'Personal story' },
-  { id: 'market_update', label: 'Market update' },
+  { id: 'direct', label: 'Direct & punchy', icon: Zap },
+  { id: 'educational', label: 'Educational & credible', icon: Lightbulb },
+  { id: 'personal', label: 'Personal story', icon: Smile },
+  { id: 'market_update', label: 'Market update', icon: Palette },
+  { id: 'urgency', label: 'Urgency & scarcity', icon: RefreshCw },
+  { id: 'aspirational', label: 'Aspirational & lifestyle', icon: Sparkles },
 ];
 
 const CTA_OPTIONS = [
   'Enquire now', 'Book a call', 'Download info pack', 'Join buyer list',
+  'Register interest', 'DM me for details', 'Visit open home', 'Get a free appraisal',
+  'View listing', 'Contact me today',
 ];
 
-const PLATFORMS = ['LinkedIn', 'Instagram', 'Facebook', 'TikTok', 'YouTube'];
+const PLATFORMS = ['LinkedIn', 'Instagram', 'Facebook', 'TikTok', 'YouTube', 'X (Twitter)'];
+
+const PLAN_FREQUENCIES = ['Daily', '3x per week', 'Weekly', 'Fortnightly'];
+
+const PLAN_GOALS = [
+  'Generate seller leads', 'Attract buyers', 'Build personal brand',
+  'Promote active listings', 'Grow social following', 'Nurture database',
+];
+
+const CONTENT_TOPICS = [
+  'Market trends & data', 'Buyer tips', 'Seller preparation', 'Investment insights',
+  'Success stories', 'Local area guides', 'Property styling', 'Finance & mortgages',
+  'First home buyers', 'Commercial property', 'Auction tips', 'Behind the scenes',
+];
+
+const CONTENT_FORMATS = [
+  { id: 'blog', label: 'Blog Post' },
+  { id: 'video', label: 'Video' },
+  { id: 'carousel', label: 'Carousel' },
+  { id: 'infographic', label: 'Infographic' },
+  { id: 'story', label: 'Story/Reel' },
+];
 
 export default function MarketingPage() {
   const { user } = useAuth();
@@ -55,16 +70,33 @@ export default function MarketingPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Global preferences
+  const [includeEmojis, setIncludeEmojis] = useState(true);
+  const [tone, setTone] = useState<'professional' | 'casual'>('professional');
+
   // Post builder state
   const [selectedGoal, setSelectedGoal] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('direct');
   const [selectedCta, setSelectedCta] = useState('Enquire now');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['LinkedIn']);
   const [listingName, setListingName] = useState('');
-  const [websiteUrl, setWebsiteUrl] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generatedPost, setGeneratedPost] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+
+  // Weekly/Monthly plan state
+  const [planType, setPlanType] = useState<'weekly' | 'monthly'>('weekly');
+  const [planPlatform, setPlanPlatform] = useState('LinkedIn');
+  const [planFrequency, setPlanFrequency] = useState('3x per week');
+  const [planGoals, setPlanGoals] = useState<string[]>([]);
+  const [generatingPlan, setGeneratingPlan] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState<any>(null);
+
+  // Content ideas state
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [customTopic, setCustomTopic] = useState('');
+  const [generatingContent, setGeneratingContent] = useState(false);
+  const [generatedIdeas, setGeneratedIdeas] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -78,6 +110,23 @@ export default function MarketingPage() {
     );
   }
 
+  function togglePlanGoal(g: string) {
+    setPlanGoals(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
+  }
+
+  function toggleTopic(t: string) {
+    setSelectedTopics(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  }
+
+  async function callMarketingAI(action: string, params: any) {
+    const { data, error } = await supabase.functions.invoke('marketing-ai', {
+      body: { action, params: { ...params, includeEmojis, tone } },
+    });
+    if (error) throw new Error(error.message || 'AI request failed');
+    if (data?.error) throw new Error(data.error);
+    return data.result;
+  }
+
   async function handleGeneratePost() {
     if (!selectedGoal) {
       toast({ title: 'Select a goal type first', variant: 'destructive' });
@@ -85,91 +134,56 @@ export default function MarketingPage() {
     }
     setGenerating(true);
     setGeneratedPost(null);
-
-    // Build prompt for local generation (template-based for now)
-    const style = STYLE_MODES.find(s => s.id === selectedStyle)?.label || 'Direct';
-    const platform = selectedPlatforms[0] || 'LinkedIn';
-
-    // Template-based post generation
-    const hooks: Record<string, string[]> = {
-      'New listing launch': [
-        `🔥 Just Listed: ${listingName || 'Exciting new opportunity'}`,
-        `📢 New to Market — ${listingName || 'Premium business for sale'}`,
-      ],
-      'Listing just sold': [
-        `✅ SOLD — ${listingName || 'Another successful deal closed'}`,
-        `🎉 Congratulations to our vendor! ${listingName || 'Deal done.'}`,
-      ],
-      'Buyer wanted': [
-        `🔍 Looking for the right buyer for ${listingName || 'a fantastic opportunity'}`,
-        `💼 Could this be your next move? ${listingName || 'Business for sale'}`,
-      ],
-      'Vendor lead generation': [
-        `Thinking about selling your business? Here's what you need to know.`,
-        `Is 2026 the year to sell? Let's talk.`,
-      ],
-      'Brand awareness': [
-        `Why top vendors choose to work with us.`,
-        `What makes a great business broker? Here's our approach.`,
-      ],
-      'Educational for sellers': [
-        `3 things every business owner should do before listing.`,
-        `How to maximise your sale price — a step-by-step guide.`,
-      ],
-      'Educational for buyers': [
-        `Buying a business in NZ? Here's your checklist.`,
-        `5 questions to ask before making an offer.`,
-      ],
-      'Testimonial or case study': [
-        `"Best decision we ever made" — hear from our latest client.`,
-        `Case Study: How we achieved 15% above asking price.`,
-      ],
-      'Behind the scenes': [
-        `A day in the life of a business broker 🤝`,
-        `What really happens behind a business sale.`,
-      ],
-    };
-
-    const hookOptions = hooks[selectedGoal] || [`Check out this ${selectedGoal.toLowerCase()}`];
-    const hook = hookOptions[Math.floor(Math.random() * hookOptions.length)];
-
-    const bodies: Record<string, string> = {
-      direct: `This is an incredible opportunity you don't want to miss. Strong revenue, loyal customer base, and growth potential. Serious enquiries only.`,
-      educational: `In the current NZ market, businesses with strong systems and recurring revenue are attracting premium multiples. Here's what makes this one stand out and what buyers should look for.`,
-      personal: `I remember the first time I walked through this business. The owner had built something truly special over 15 years. Now it's time for someone new to take the reins.`,
-      market_update: `The NZ business sales market is showing resilience in 2026. Transaction volumes are up 12% year-on-year, and well-prepared vendors are achieving strong multiples. Here's what that means for you.`,
-    };
-
-    const body = bodies[selectedStyle] || bodies.direct;
-    const hashtags = platform === 'LinkedIn'
-      ? '#BusinessForSale #NZBusiness #BusinessBroker #Entrepreneurship'
-      : platform === 'Instagram'
-        ? '#businessforsale #nzbusiness #entrepreneur #smallbusiness #investment'
-        : '#business #forsale #opportunity';
-
-    const post = {
-      platform,
-      hook,
-      body,
-      cta: `👉 ${selectedCta} — link in bio or DM me directly.`,
-      hashtags,
-      imageIdea: selectedGoal.includes('sold') ? 'Photo of handshake or "SOLD" overlay on listing image' :
-        selectedGoal.includes('Behind') ? 'Candid photo at desk or site visit' :
-          'High-quality listing photo or branded template graphic',
-      videoScript: (platform === 'TikTok' || platform === 'Instagram') ?
-        `[0-3s] Hook: "${hook}"\n[3-10s] Show the key highlights — walk-through or stats overlay\n[10-15s] CTA: "${selectedCta}" with text overlay` : null,
-    };
-
-    setGeneratedPost(post);
-    setGenerating(false);
-
-    // Log to audit
-    if (user) {
-      supabase.from('audit_logs').insert({
-        owner_user_id: user.id,
-        event_type: 'post_generated',
-        details: { goal: selectedGoal, style: selectedStyle, platform },
+    try {
+      const style = STYLE_MODES.find(s => s.id === selectedStyle)?.label || 'Direct';
+      const result = await callMarketingAI('generate_post', {
+        goal: selectedGoal, style, cta: selectedCta,
+        platforms: selectedPlatforms, listingName,
       });
+      setGeneratedPost({ ...result, platform: selectedPlatforms[0] || 'LinkedIn' });
+    } catch (err: any) {
+      toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleGeneratePlan() {
+    if (planGoals.length === 0) {
+      toast({ title: 'Select at least one goal', variant: 'destructive' });
+      return;
+    }
+    setGeneratingPlan(true);
+    setGeneratedPlan(null);
+    try {
+      const result = await callMarketingAI('generate_plan', {
+        planType, platform: planPlatform,
+        frequency: planFrequency, goals: planGoals.join(', '),
+      });
+      setGeneratedPlan(result);
+    } catch (err: any) {
+      toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setGeneratingPlan(false);
+    }
+  }
+
+  async function handleGenerateContentIdeas() {
+    if (selectedTopics.length === 0 && !customTopic.trim()) {
+      toast({ title: 'Select topics or add a custom one', variant: 'destructive' });
+      return;
+    }
+    setGeneratingContent(true);
+    setGeneratedIdeas([]);
+    try {
+      const result = await callMarketingAI('generate_content_ideas', {
+        topics: selectedTopics, customTopic: customTopic.trim(),
+      });
+      setGeneratedIdeas(result.ideas || []);
+    } catch (err: any) {
+      toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setGeneratingContent(false);
     }
   }
 
@@ -182,12 +196,52 @@ export default function MarketingPage() {
     toast({ title: 'Copied to clipboard' });
   }
 
+  const typeColors: Record<string, string> = {
+    content: 'bg-primary/10 text-primary',
+    outreach: 'bg-accent/10 text-accent',
+    networking: 'bg-secondary text-secondary-foreground',
+    email: 'bg-muted text-muted-foreground',
+  };
+
+  const difficultyColors: Record<string, string> = {
+    easy: 'bg-green-500/10 text-green-700 dark:text-green-400',
+    medium: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
+    advanced: 'bg-red-500/10 text-red-700 dark:text-red-400',
+  };
+
   return (
     <>
       <PageHeader
         title="Marketing Planner"
-        description="Content calendar, post builder, and campaigns aligned to your sales goals"
+        description="AI-powered content, weekly routines, and campaigns aligned to your goals"
       />
+
+      {/* Global Preferences Bar */}
+      <Card className="shadow-card mb-6">
+        <CardContent className="py-3 flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Smile size={16} className="text-muted-foreground" />
+            <Label htmlFor="emoji-toggle" className="text-sm cursor-pointer">Include Emojis</Label>
+            <Switch id="emoji-toggle" checked={includeEmojis} onCheckedChange={setIncludeEmojis} />
+          </div>
+          <div className="flex items-center gap-2">
+            <BriefcaseBusiness size={16} className="text-muted-foreground" />
+            <Label className="text-sm">Tone</Label>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setTone('professional')}
+                className={cn('px-3 py-1 text-xs font-medium transition-colors',
+                  tone === 'professional' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted')}
+              >Professional</button>
+              <button
+                onClick={() => setTone('casual')}
+                className={cn('px-3 py-1 text-xs font-medium transition-colors',
+                  tone === 'casual' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted')}
+              >Casual</button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="builder">
         <TabsList className="mb-4">
@@ -197,22 +251,21 @@ export default function MarketingPage() {
           <TabsTrigger value="campaigns">Email Campaigns</TabsTrigger>
         </TabsList>
 
-        {/* Post Builder */}
+        {/* ===== Post Builder ===== */}
         <TabsContent value="builder">
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Left: Inputs */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="text-lg font-heading flex items-center gap-2">
                   <Sparkles size={18} className="text-primary" />
-                  Generate a Post
+                  AI Post Generator
                 </CardTitle>
-                <CardDescription>Select your goal, style, and platform to generate copy</CardDescription>
+                <CardDescription>Select your goal, style, and platform — AI writes the copy</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Listing Name (optional)</Label>
-                  <Input placeholder="e.g. Café & Restaurant - Ponsonby" value={listingName} onChange={e => setListingName(e.target.value)} />
+                  <Input placeholder="e.g. 3-bed Villa — Ponsonby" value={listingName} onChange={e => setListingName(e.target.value)} />
                 </div>
 
                 <div className="space-y-2">
@@ -230,14 +283,19 @@ export default function MarketingPage() {
 
                 <div className="space-y-2">
                   <Label>Style</Label>
-                  <Select value={selectedStyle} onValueChange={setSelectedStyle}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STYLE_MODES.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-2 gap-2">
+                    {STYLE_MODES.map(s => {
+                      const Icon = s.icon;
+                      return (
+                        <button key={s.id} onClick={() => setSelectedStyle(s.id)}
+                          className={cn('flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors text-left',
+                            selectedStyle === s.id ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40')}>
+                          <Icon size={14} />
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -266,12 +324,12 @@ export default function MarketingPage() {
                 </div>
 
                 <Button onClick={handleGeneratePost} disabled={generating} className="w-full">
-                  {generating ? 'Generating...' : <><Sparkles size={16} className="mr-1.5" /> Generate Post</>}
+                  {generating ? <><RefreshCw size={16} className="mr-1.5 animate-spin" /> Generating...</> : <><Wand2 size={16} className="mr-1.5" /> Generate with AI</>}
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Right: Output */}
+            {/* Output */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="text-lg font-heading">Generated Post</CardTitle>
@@ -286,29 +344,21 @@ export default function MarketingPage() {
                   <div className="space-y-4">
                     <Badge variant="secondary">{generatedPost.platform}</Badge>
                     <div className="space-y-3 text-sm">
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Hook</p>
-                        <p className="font-medium">{generatedPost.hook}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Main Copy</p>
-                        <p className="text-muted-foreground">{generatedPost.body}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">CTA</p>
-                        <p>{generatedPost.cta}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Hashtags</p>
-                        <p className="text-xs text-primary">{generatedPost.hashtags}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Image Idea</p>
-                        <p className="text-xs text-muted-foreground italic">{generatedPost.imageIdea}</p>
-                      </div>
+                      {[
+                        { label: 'Hook', value: generatedPost.hook, bold: true },
+                        { label: 'Main Copy', value: generatedPost.body },
+                        { label: 'CTA', value: generatedPost.cta },
+                        { label: 'Hashtags', value: generatedPost.hashtags, className: 'text-primary' },
+                        { label: 'Image Idea', value: generatedPost.imageIdea, className: 'italic text-muted-foreground' },
+                      ].map(item => item.value && (
+                        <div key={item.label}>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{item.label}</p>
+                          <p className={cn(item.bold && 'font-medium', item.className)}>{item.value}</p>
+                        </div>
+                      ))}
                       {generatedPost.videoScript && (
                         <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Short Video Script</p>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Video Script</p>
                           <pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-muted/50 rounded-lg p-3">{generatedPost.videoScript}</pre>
                         </div>
                       )}
@@ -323,59 +373,196 @@ export default function MarketingPage() {
           </div>
         </TabsContent>
 
-        {/* Weekly Actions */}
+        {/* ===== Weekly Actions / Marketing Routine ===== */}
         <TabsContent value="weekly">
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading flex items-center gap-2">
-                <Calendar size={18} className="text-primary" />
-                Weekly Marketing Routine
-              </CardTitle>
-              <CardDescription>Consistent actions aligned with your pipeline goals</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {WEEKLY_TEMPLATES.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-muted-foreground w-20">{item.day}</span>
-                      <span className="text-sm">{item.action}</span>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">{item.platform}</Badge>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Preferences */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg font-heading flex items-center gap-2">
+                  <Calendar size={18} className="text-primary" />
+                  Plan Preferences
+                </CardTitle>
+                <CardDescription>Set your preferences and let AI generate your routine</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Plan Type</Label>
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    <button onClick={() => setPlanType('weekly')}
+                      className={cn('flex-1 px-4 py-2 text-sm font-medium transition-colors',
+                        planType === 'weekly' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted')}>
+                      Weekly
+                    </button>
+                    <button onClick={() => setPlanType('monthly')}
+                      className={cn('flex-1 px-4 py-2 text-sm font-medium transition-colors',
+                        planType === 'monthly' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted')}>
+                      Monthly
+                    </button>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                </div>
 
-        {/* Content Ideas */}
-        <TabsContent value="content">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {CONTENT_IDEAS.map((idea, i) => (
-              <Card key={i} className="shadow-card hover:shadow-md transition-shadow">
-                <CardContent className="pt-5">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-                      <Lightbulb size={16} className="text-accent" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <p className="text-sm font-medium">{idea.title}</p>
-                      <p className="text-xs text-muted-foreground">{idea.desc}</p>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {idea.tags.map(tag => (
-                          <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
-                        ))}
-                      </div>
-                    </div>
+                <div className="space-y-2">
+                  <Label>Primary Platform</Label>
+                  <Select value={planPlatform} onValueChange={setPlanPlatform}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PLATFORMS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Posting Frequency</Label>
+                  <Select value={planFrequency} onValueChange={setPlanFrequency}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PLAN_FREQUENCIES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Goals</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {PLAN_GOALS.map(g => (
+                      <button key={g} onClick={() => togglePlanGoal(g)}
+                        className={cn('rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                          planGoals.includes(g) ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40')}>
+                        {g}
+                      </button>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+
+                <Button onClick={handleGeneratePlan} disabled={generatingPlan} className="w-full">
+                  {generatingPlan ? <><RefreshCw size={16} className="mr-1.5 animate-spin" /> Generating...</> : <><Wand2 size={16} className="mr-1.5" /> Generate {planType} Plan</>}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Generated Plan */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg font-heading">
+                  {generatedPlan?.title || 'Your Marketing Routine'}
+                </CardTitle>
+                {generatedPlan?.summary && <CardDescription>{generatedPlan.summary}</CardDescription>}
+              </CardHeader>
+              <CardContent>
+                {!generatedPlan ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                    <Calendar size={32} className="mb-3 opacity-50" />
+                    <p className="text-sm">Set your preferences and generate a plan</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(generatedPlan.actions || []).map((item: any, i: number) => (
+                      <div key={i} className="flex items-start justify-between rounded-lg border border-border p-3 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-start gap-3 flex-1">
+                          <span className="text-xs font-semibold text-muted-foreground w-24 shrink-0 pt-0.5">{item.day}</span>
+                          <div className="space-y-1">
+                            <span className="text-sm font-medium">{item.task}</span>
+                            {item.details && <p className="text-xs text-muted-foreground">{item.details}</p>}
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0 ml-2">
+                          <Badge variant="secondary" className="text-xs">{item.platform}</Badge>
+                          {item.type && (
+                            <Badge className={cn('text-xs', typeColors[item.type] || 'bg-muted text-muted-foreground')}>
+                              {item.type}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
-        {/* Email Campaigns */}
+        {/* ===== Content Ideas / AI Builder ===== */}
+        <TabsContent value="content">
+          <div className="space-y-6">
+            {/* Topic selector */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg font-heading flex items-center gap-2">
+                  <Lightbulb size={18} className="text-primary" />
+                  AI Content Generator
+                </CardTitle>
+                <CardDescription>Pick topics or add your own — AI creates structured content ideas</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Select Topics</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {CONTENT_TOPICS.map(t => (
+                      <button key={t} onClick={() => toggleTopic(t)}
+                        className={cn('rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                          selectedTopics.includes(t) ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40')}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Custom Topic (optional)</Label>
+                  <Input placeholder="e.g. Downsizing tips for retirees" value={customTopic} onChange={e => setCustomTopic(e.target.value)} />
+                </div>
+
+                <Button onClick={handleGenerateContentIdeas} disabled={generatingContent} className="w-full sm:w-auto">
+                  {generatingContent ? <><RefreshCw size={16} className="mr-1.5 animate-spin" /> Generating...</> : <><Wand2 size={16} className="mr-1.5" /> Generate Ideas</>}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Generated ideas */}
+            {generatedIdeas.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {generatedIdeas.map((idea, i) => (
+                  <Card key={i} className="shadow-card hover:shadow-md transition-shadow">
+                    <CardContent className="pt-5 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                          <Lightbulb size={16} className="text-primary" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">{idea.title}</p>
+                          <p className="text-xs text-muted-foreground">{idea.description}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(idea.platforms || []).map((p: string) => (
+                          <Badge key={p} variant="outline" className="text-xs">{p}</Badge>
+                        ))}
+                        {idea.format && (
+                          <Badge variant="secondary" className="text-xs capitalize">{idea.format}</Badge>
+                        )}
+                        {idea.difficulty && (
+                          <Badge className={cn('text-xs', difficultyColors[idea.difficulty] || '')}>
+                            {idea.difficulty}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {generatedIdeas.length === 0 && !generatingContent && (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                Select topics above and click Generate to get AI-powered content ideas
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ===== Email Campaigns ===== */}
         <TabsContent value="campaigns">
           <EmptyState
             icon={Mail}
