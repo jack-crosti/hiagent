@@ -28,20 +28,20 @@ export function PipelineChart({ deals }: { deals: Deal[] }) {
   if (data.length === 0) return null;
 
   return (
-    <Card>
+    <Card className="shadow-card">
       <CardHeader>
         <CardTitle className="text-lg font-heading">Pipeline by Deal</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-72">
+        <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={55}
-                outerRadius={95}
+                innerRadius={50}
+                outerRadius={90}
                 paddingAngle={3}
                 dataKey="value"
               >
@@ -54,11 +54,10 @@ export function PipelineChart({ deals }: { deals: Deal[] }) {
                   new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 0 }).format(value)
                 }
                 contentStyle={{
-                  borderRadius: 12,
-                  border: 'none',
+                  borderRadius: 8,
+                  border: '1px solid hsl(var(--border))',
                   background: 'hsl(var(--card))',
                   color: 'hsl(var(--card-foreground))',
-                  boxShadow: '0 4px 20px -4px rgba(0,0,0,0.1)',
                 }}
                 labelStyle={{ color: 'hsl(var(--card-foreground))' }}
               />

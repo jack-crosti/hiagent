@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, DollarSign, User, Image, Target } from 'lucide-react';
+import { Check, Loader2, DollarSign, User, Image, Palette, Target } from 'lucide-react';
 import { formatNZD } from '@/services/commissionService';
 
 interface ReviewData {
@@ -14,6 +14,8 @@ interface ReviewData {
   email: string;
   hasLogo: boolean;
   logoUrl: string | null;
+  themeBase: string;
+  backgroundMode: string;
 }
 
 interface Props {
@@ -55,6 +57,8 @@ export function SetupReviewStep({ data, saving, onApply, onBack }: Props) {
           {data.name && <ReviewRow icon={<User size={14} />} label="Name" value={data.name} />}
           {data.email && <ReviewRow icon={<User size={14} />} label="Email" value={data.email} />}
           <ReviewRow icon={<Image size={14} />} label="Logo" value={data.hasLogo ? 'Uploaded' : 'Skipped'} />
+          <ReviewRow icon={<Palette size={14} />} label="Theme" value={data.themeBase} />
+          <ReviewRow icon={<Palette size={14} />} label="Background" value={data.backgroundMode} />
         </div>
 
         {data.logoUrl && (
@@ -68,9 +72,15 @@ export function SetupReviewStep({ data, saving, onApply, onBack }: Props) {
         )}
 
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" onClick={onBack} className="flex-1">Back</Button>
+          <Button variant="outline" onClick={onBack} className="flex-1">
+            Back
+          </Button>
           <Button onClick={onApply} disabled={saving} className="flex-1">
-            {saving ? <Loader2 size={16} className="mr-1.5 animate-spin" /> : <Check size={16} className="mr-1.5" />}
+            {saving ? (
+              <Loader2 size={16} className="mr-1.5 animate-spin" />
+            ) : (
+              <Check size={16} className="mr-1.5" />
+            )}
             Apply & Launch Dashboard
           </Button>
         </div>

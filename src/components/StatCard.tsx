@@ -13,15 +13,13 @@ interface StatCardProps {
 export function StatCard({ title, value, subtitle, icon, trend, className }: StatCardProps) {
   return (
     <div className={cn(
-      'group rounded-2xl border-0 bg-card p-6 shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1',
-      'before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100',
-      'relative overflow-hidden',
+      'rounded-xl border border-border bg-card p-5 shadow-card transition-shadow hover:shadow-elevated',
       className
     )}>
-      <div className="flex items-start justify-between relative z-10">
-        <div className="space-y-1.5">
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="font-heading text-2xl md:text-3xl font-bold text-card-foreground">{value}</p>
+          <p className="font-heading text-2xl font-bold text-card-foreground">{value}</p>
           {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           {trend && (
             <p className={cn(
@@ -33,7 +31,7 @@ export function StatCard({ title, value, subtitle, icon, trend, className }: Sta
           )}
         </div>
         {icon && (
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:bg-primary/15">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             {icon}
           </div>
         )}

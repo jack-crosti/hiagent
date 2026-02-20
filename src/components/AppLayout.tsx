@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,9 +20,9 @@ function isSetupIncomplete(profile: Record<string, unknown> | null, setupState: 
 
   // Splits not set (still at exact default or null)
   const splitsNotSet =
-  profile.business_sale_user_share == null ||
-  profile.lease_user_share == null ||
-  profile.property_sale_user_share == null;
+    profile.business_sale_user_share == null ||
+    profile.lease_user_share == null ||
+    profile.property_sale_user_share == null;
 
   // Withholding rate not set
   const whrNotSet = profile.withholding_rate == null;
@@ -34,10 +34,9 @@ function isSetupIncomplete(profile: Record<string, unknown> | null, setupState: 
   return splitsNotSet || whrNotSet || logoNotSet;
 }
 
-export function AppLayout({ children }: {children: ReactNode;}) {
+export function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const isMobile = useIsMobile();
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
   const [userType, setUserType] = useState<string | null | undefined>(undefined);
@@ -45,9 +44,9 @@ export function AppLayout({ children }: {children: ReactNode;}) {
   useEffect(() => {
     if (!user) return;
     Promise.all([
-    supabase.from('setup_state').select('is_complete, skipped').eq('owner_user_id', user.id).maybeSingle(),
-    supabase.from('profiles').select('user_type, business_sale_user_share, lease_user_share, property_sale_user_share, withholding_rate, avatar_url, active_theme').eq('owner_user_id', user.id).maybeSingle()]
-    ).then(([setupRes, profileRes]) => {
+      supabase.from('setup_state').select('is_complete, skipped').eq('owner_user_id', user.id).maybeSingle(),
+      supabase.from('profiles').select('user_type, business_sale_user_share, lease_user_share, property_sale_user_share, withholding_rate, avatar_url, active_theme').eq('owner_user_id', user.id).maybeSingle(),
+    ]).then(([setupRes, profileRes]) => {
       setUserType(profileRes.data?.user_type ?? null);
 
       // If setup is explicitly marked complete, honour that
@@ -65,39 +64,39 @@ export function AppLayout({ children }: {children: ReactNode;}) {
     });
   }, [user]);
 
-  if (loading || user && (setupComplete === null || userType === undefined)) {
+  if (loading || (user && (setupComplete === null || userType === undefined))) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           <span className="text-sm text-muted-foreground">Loading HiAgent...</span>
         </div>
-      </div>);
-
+      </div>
+    );
   }
 
   if (!user) return <Navigate to="/auth" replace />;
 
   // Show user type selector first if not set
   if (!userType) {
-    return <UserTypeSelector onComplete={() => {setUserType('set');}} />;
+    return <UserTypeSelector onComplete={() => { setUserType('set'); }} />;
   }
 
   if (!setupComplete) {
-    return <QuickSetup onComplete={() => {setSetupComplete(true);navigate('/', { replace: true });}} />;
+    return <QuickSetup onComplete={() => { setSetupComplete(true); navigate('/', { replace: true }); }} />;
   }
 
   return (
     <div className="flex min-h-screen w-full bg-background">
       {!isMobile && <AppSidebar />}
       <main className="flex-1 flex flex-col min-h-screen">
-        <DemoBanner className="text-7xl" />
+        <DemoBanner />
         <SetupBanner />
-        <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
+        <div className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-fade-in">
           {children}
         </div>
       </main>
       {isMobile && <BottomNav />}
-    </div>);
-
+    </div>
+  );
 }

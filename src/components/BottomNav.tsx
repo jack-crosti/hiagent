@@ -34,7 +34,7 @@ export function BottomNav() {
   const isMoreActive = moreItems.some(i => location.pathname.startsWith(i.to));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 backdrop-blur-xl bg-card/70 safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 safe-area-bottom">
       <div className="flex items-center justify-around px-2 py-1">
         {primaryTabs.map(tab => {
           const isActive = tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to);
@@ -43,13 +43,12 @@ export function BottomNav() {
               key={tab.to}
               to={tab.to}
               className={cn(
-                'flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200',
-                isActive ? 'text-primary scale-110' : 'text-muted-foreground'
+                'flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
+                isActive ? 'text-primary' : 'text-muted-foreground'
               )}
             >
               <tab.icon size={20} />
               <span>{tab.label}</span>
-              {isActive && <div className="h-1 w-1 rounded-full bg-primary mt-0.5" />}
             </NavLink>
           );
         })}
@@ -58,13 +57,12 @@ export function BottomNav() {
           <SheetTrigger asChild>
             <button
               className={cn(
-                'flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200',
-                isMoreActive ? 'text-primary scale-110' : 'text-muted-foreground'
+                'flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
+                isMoreActive ? 'text-primary' : 'text-muted-foreground'
               )}
             >
               <MoreHorizontal size={20} />
               <span>More</span>
-              {isMoreActive && <div className="h-1 w-1 rounded-full bg-primary mt-0.5" />}
             </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-2xl pb-safe">
@@ -77,7 +75,7 @@ export function BottomNav() {
                   key={item.to}
                   to={item.to}
                   onClick={() => setOpen(false)}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 text-center hover:bg-muted transition-all duration-200"
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 text-center hover:bg-muted transition-colors"
                 >
                   <item.icon size={22} className="text-primary" />
                   <span className="text-xs font-medium text-foreground">{item.label}</span>
