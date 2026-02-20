@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   BookOpen, Receipt, CreditCard, Brain, Zap, Megaphone,
-  Palette, Settings
+  Palette, Settings, GraduationCap
 } from 'lucide-react';
 
 const primaryTabs = [
@@ -26,6 +26,7 @@ const moreItems = [
   { to: '/marketing', label: 'Marketing Planner', icon: Megaphone },
   { to: '/customization', label: 'Customization', icon: Palette },
   { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/guide', label: 'Guide', icon: GraduationCap },
 ];
 
 export function BottomNav() {

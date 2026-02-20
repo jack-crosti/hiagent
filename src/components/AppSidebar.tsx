@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard, ArrowRightLeft, BookOpen, Receipt,
   CreditCard, Brain, Zap, User, Megaphone, FileText,
-  Palette, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Eye, Moon
+  Palette, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Eye, Moon, GraduationCap
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,7 @@ const navItems = [
   { to: '/reports', label: 'Reports', icon: FileText },
   { to: '/customization', label: 'Customization', icon: Palette },
   { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/guide', label: 'Guide', icon: GraduationCap },
 ];
 
 function getAppName(userType: string | null | undefined): { prefix: string; suffix: string } {
