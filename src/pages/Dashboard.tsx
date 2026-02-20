@@ -67,12 +67,20 @@ export default function Dashboard() {
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <StatCard title="Total Income" value={formatNZD(stats.totalIncome)} icon={<DollarSign size={22} />}
-          trend={stats.totalIncome > 0 ? { value: 'This period', positive: true } : undefined} className="animate-fade-in" />
-        <StatCard title="Total Expenses" value={formatNZD(stats.totalExpenses)} icon={<ArrowRightLeft size={22} />} className="animate-fade-in [animation-delay:50ms]" />
-        <StatCard title="Pending GST" value={formatNZD(stats.pendingGst)} icon={<Receipt size={22} />} subtitle="Current period" className="animate-fade-in [animation-delay:100ms]" />
-        <StatCard title="Pipeline Value" value={formatNZD(stats.dealsPipeline)} icon={<TrendingUp size={22} />}
-          subtitle={`${stats.dealsCount} active deals`} className="animate-fade-in [animation-delay:150ms]" />
+        <Link to="/transactions" className="block">
+          <StatCard title="Total Income" value={formatNZD(stats.totalIncome)} icon={<DollarSign size={22} />}
+            trend={stats.totalIncome > 0 ? { value: 'This period', positive: true } : undefined} className="animate-fade-in cursor-pointer" />
+        </Link>
+        <Link to="/transactions" className="block">
+          <StatCard title="Total Expenses" value={formatNZD(stats.totalExpenses)} icon={<ArrowRightLeft size={22} />} className="animate-fade-in [animation-delay:50ms] cursor-pointer" />
+        </Link>
+        <Link to="/gst" className="block">
+          <StatCard title="Pending GST" value={formatNZD(stats.pendingGst)} icon={<Receipt size={22} />} subtitle="Current period" className="animate-fade-in [animation-delay:100ms] cursor-pointer" />
+        </Link>
+        <Link to="/personal-finance" className="block">
+          <StatCard title="Pipeline Value" value={formatNZD(stats.dealsPipeline)} icon={<TrendingUp size={22} />}
+            subtitle={`${stats.dealsCount} active deals`} className="animate-fade-in [animation-delay:150ms] cursor-pointer" />
+        </Link>
       </div>
 
       {/* Charts — bento grid */}
