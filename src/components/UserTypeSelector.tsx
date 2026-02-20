@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { TubesBackground } from '@/components/ui/neon-flow';
 import { Building2, Home, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,51 +24,51 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg space-y-6 animate-fade-in">
+    <TubesBackground className="min-h-screen">
+      <div className="w-full max-w-lg space-y-6 animate-fade-in p-4">
         <div className="text-center space-y-2">
-          <div className="items-start justify-center flex flex-row mx-0 py-[58px]">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-heading font-bold text-9xl">
-              Hi
-            </div>
+          <div className="flex justify-center">
+            <span className="font-heading font-bold text-6xl text-white">
+              Hi<span className="text-violet-500">Agent</span>
+            </span>
           </div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">What best describes you?</h1>
-          <p className="text-muted-foreground text-sm">We'll personalise Hi<span className="text-primary font-semibold">Agent</span> to match your workflow</p>
+          <h1 className="font-heading text-2xl font-bold text-white">What best describes you?</h1>
+          <p className="text-white/70 text-sm">We'll personalise your experience to match your workflow</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => setSelected('business_broker')}
             className={cn(
-              'rounded-xl border-2 p-6 text-center transition-all hover:border-primary/40',
-              selected === 'business_broker' ?
-              'border-primary bg-primary/5 ring-2 ring-primary/20' :
-              'border-border'
-            )}>
-
-            <Building2 size={32} className="mx-auto mb-3 text-primary" />
-            <p className="font-heading font-semibold">Business Broker</p>
+              'rounded-xl border-2 p-6 text-center transition-all backdrop-blur-sm',
+              selected === 'business_broker'
+                ? 'border-violet-500 bg-white/25 ring-4 ring-violet-500/40 shadow-lg shadow-violet-500/20 scale-[1.03]'
+                : 'border-white/20 bg-white/10 hover:border-white/40'
+            )}
+          >
+            <Building2 size={32} className="mx-auto mb-3 text-white" />
+            <p className="font-heading font-semibold text-white">Business Broker</p>
           </button>
 
           <button
             onClick={() => setSelected('real_estate_agent')}
             className={cn(
-              'rounded-xl border-2 p-6 text-center transition-all hover:border-primary/40',
-              selected === 'real_estate_agent' ?
-              'border-primary bg-primary/5 ring-2 ring-primary/20' :
-              'border-border'
-            )}>
-
-            <Home size={32} className="mx-auto mb-3 text-primary" />
-            <p className="font-heading font-semibold">Real Estate Agent</p>
+              'rounded-xl border-2 p-6 text-center transition-all backdrop-blur-sm',
+              selected === 'real_estate_agent'
+                ? 'border-violet-500 bg-white/25 ring-4 ring-violet-500/40 shadow-lg shadow-violet-500/20 scale-[1.03]'
+                : 'border-white/20 bg-white/10 hover:border-white/40'
+            )}
+          >
+            <Home size={32} className="mx-auto mb-3 text-white" />
+            <p className="font-heading font-semibold text-white">Real Estate Agent</p>
           </button>
         </div>
 
-        <Button onClick={handleContinue} disabled={!selected || saving} className="w-full">
+        <Button onClick={handleContinue} disabled={!selected || saving} className="w-full bg-white text-foreground hover:bg-white/90 font-semibold">
           {saving && <Loader2 size={16} className="mr-1.5 animate-spin" />}
           Continue
         </Button>
       </div>
-    </div>);
-
+    </TubesBackground>
+  );
 }
