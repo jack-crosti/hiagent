@@ -54,7 +54,7 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-5">
         {logoUrl ? (
-          <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-lg object-contain shrink-0" />
+          <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-lg object-contain shrink-0 mix-blend-multiply dark:brightness-0 dark:invert" />
         ) : (
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm shrink-0">
             Hi

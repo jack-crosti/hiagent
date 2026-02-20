@@ -58,7 +58,7 @@ export default function Dashboard() {
         action={
           <div className="flex items-center gap-3">
             {logoUrl && (
-              <img src={logoUrl} alt="Logo" className="h-8 w-auto object-contain rounded" />
+              <img src={logoUrl} alt="Logo" className="h-8 w-auto object-contain rounded mix-blend-multiply dark:brightness-0 dark:invert" />
             )}
             <Link to="/personal-finance">
               <Button size="sm"><Target size={16} className="mr-1.5" />View Goals</Button>
