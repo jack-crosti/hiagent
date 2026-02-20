@@ -60,12 +60,12 @@
     --chart-4: 340 60% 55%;
     --chart-5: 152 56% 42%;
 
-    /* Shadows — premium floating cards */
+    /* Shadows — premium floating cards with 3D depth */
     --shadow-sm: 0 1px 2px 0 hsl(240 20% 14% / 0.04);
     --shadow-md: 0 4px 12px -2px hsl(240 20% 14% / 0.06), 0 2px 4px -2px hsl(240 20% 14% / 0.04);
     --shadow-lg: 0 10px 25px -5px hsl(240 20% 14% / 0.08), 0 4px 10px -4px hsl(240 20% 14% / 0.04);
-    --shadow-card: 0 2px 20px -4px hsl(250 30% 30% / 0.08);
-    --shadow-elevated: 0 8px 30px -6px hsl(250 30% 30% / 0.14);
+    --shadow-card: 0 4px 24px -6px hsl(250 30% 30% / 0.10), 0 1px 3px -1px hsl(250 30% 30% / 0.06);
+    --shadow-elevated: 0 12px 40px -8px hsl(250 30% 30% / 0.18), 0 4px 12px -4px hsl(250 30% 30% / 0.08);
 
     /* Sidebar — white */
     --sidebar-background: 250 20% 90%;

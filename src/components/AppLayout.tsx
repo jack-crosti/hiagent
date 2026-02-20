@@ -85,7 +85,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full bg-gradient-to-br from-background via-background to-primary/5">
       {!isMobile && <AppSidebar />}
       <main className="flex-1 flex flex-col min-h-screen">
         {/* Top header bar */}
