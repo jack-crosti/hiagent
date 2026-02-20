@@ -47,7 +47,7 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200 sticky top-0 h-screen',
+        'flex flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-in-out sticky top-0 h-screen',
         collapsed ? 'w-16' : 'w-60'
       )}
     >
@@ -80,10 +80,10 @@ export function AppSidebar() {
               key={item.to}
               to={item.to}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
                 isActive
-                  ? 'bg-sidebar-accent text-primary'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
               )}
             >
               <item.icon className="h-4.5 w-4.5 shrink-0" size={18} />
