@@ -12,6 +12,7 @@ import { DemoBanner } from '@/components/DemoBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { UserTypeProvider } from '@/contexts/UserTypeContext';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { GradientBackgrounds } from '@/components/ui/gradient-backgrounds';
 
 /**
  * Checks whether the user's required settings are complete.
@@ -103,16 +104,18 @@ export function AppLayout({ children }: {children: ReactNode;}) {
 
   return (
     <UserTypeProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        {!isMobile && <AppSidebar userType={userType as string | null} />}
-        <MainContent location={location}>
-          <SetupBanner />
-          <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
-            {children}
-          </div>
-        </MainContent>
-        {isMobile && <BottomNav />}
-      </div>
+      <GradientBackgrounds>
+        <div className="flex min-h-screen w-full">
+          {!isMobile && <AppSidebar userType={userType as string | null} />}
+          <MainContent location={location}>
+            <SetupBanner />
+            <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
+              {children}
+            </div>
+          </MainContent>
+          {isMobile && <BottomNav />}
+        </div>
+      </GradientBackgrounds>
     </UserTypeProvider>);
 
 }
