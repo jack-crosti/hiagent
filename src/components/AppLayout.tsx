@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +37,7 @@ function isSetupIncomplete(profile: Record<string, unknown> | null, setupState: 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
   const [userType, setUserType] = useState<string | null | undefined>(undefined);
@@ -92,7 +93,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 flex flex-col min-h-screen">
         <DemoBanner />
         <SetupBanner />
-        <div className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-fade-in">
+        <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
           {children}
         </div>
       </main>
