@@ -66,35 +66,37 @@ export default function Dashboard() {
         }
       />
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Link to="/transactions" className="block h-full">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8 scroll-reveal-stagger">
+        <Link to="/transactions" className="block h-full scroll-reveal">
           <StatCard title="Total Income" value={formatNZD(stats.totalIncome)} icon={<DollarSign size={22} />}
-            trend={stats.totalIncome > 0 ? { value: 'This period', positive: true } : undefined} className="animate-fade-in cursor-pointer h-full" />
+            trend={stats.totalIncome > 0 ? { value: 'This period', positive: true } : undefined} className="cursor-pointer h-full" />
         </Link>
-        <Link to="/transactions" className="block h-full">
-          <StatCard title="Total Expenses" value={formatNZD(stats.totalExpenses)} icon={<ArrowRightLeft size={22} />} className="animate-fade-in [animation-delay:50ms] cursor-pointer h-full" />
+        <Link to="/transactions" className="block h-full scroll-reveal">
+          <StatCard title="Total Expenses" value={formatNZD(stats.totalExpenses)} icon={<ArrowRightLeft size={22} />} className="cursor-pointer h-full" />
         </Link>
-        <Link to="/gst" className="block h-full">
-          <StatCard title="Pending GST" value={formatNZD(stats.pendingGst)} icon={<Receipt size={22} />} subtitle="Current period" className="animate-fade-in [animation-delay:100ms] cursor-pointer h-full" />
+        <Link to="/gst" className="block h-full scroll-reveal">
+          <StatCard title="Pending GST" value={formatNZD(stats.pendingGst)} icon={<Receipt size={22} />} subtitle="Current period" className="cursor-pointer h-full" />
         </Link>
-        <Link to="/personal-finance" className="block h-full">
+        <Link to="/personal-finance" className="block h-full scroll-reveal">
           <StatCard title="Pipeline Value" value={formatNZD(stats.dealsPipeline)} icon={<TrendingUp size={22} />}
-            subtitle={`${stats.dealsCount} active deals`} className="animate-fade-in [animation-delay:150ms] cursor-pointer h-full" />
+            subtitle={`${stats.dealsCount} active deals`} className="cursor-pointer h-full" />
         </Link>
       </div>
 
       {/* Charts — bento grid */}
       {!stats.isDemo && (
-        <div className="grid gap-6 lg:grid-cols-3 mb-8">
-          <div className="lg:col-span-2">
+        <div className="grid gap-6 lg:grid-cols-3 mb-8 scroll-reveal-stagger">
+          <div className="lg:col-span-2 scroll-reveal">
             <IncomeExpenseChart transactions={txns} />
           </div>
-          <PipelineChart deals={deals} />
+          <div className="scroll-reveal">
+            <PipelineChart deals={deals} />
+          </div>
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-3 scroll-reveal-stagger">
+        <div className="lg:col-span-2 scroll-reveal">
           <Card>
             <CardHeader><CardTitle className="text-lg font-heading">Quick Actions</CardTitle></CardHeader>
             <CardContent className="space-y-2">
@@ -111,15 +113,17 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {stats.isDemo && <DemoModeCard userId={user?.id ?? ''} onComplete={loadStats} />}
+        {stats.isDemo && <div className="scroll-reveal"><DemoModeCard userId={user?.id ?? ''} onComplete={loadStats} /></div>}
 
         {!stats.isDemo && (
-          <Card>
-            <CardHeader><CardTitle className="text-lg font-heading">Recent Activity</CardTitle></CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Your recent transactions and deals will appear here.</p>
-            </CardContent>
-          </Card>
+          <div className="scroll-reveal">
+            <Card>
+              <CardHeader><CardTitle className="text-lg font-heading">Recent Activity</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Your recent transactions and deals will appear here.</p>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </>
