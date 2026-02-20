@@ -1,73 +1,42 @@
 
 
-# Fix Marketing Planner AI Features
+# Embed Master Writing Prompts into Marketing AI
 
-## Problem
+## Overview
 
-The AI edge function (`marketing-ai`) returns `{"result": {}}` for all three generators (Post Builder, Weekly Actions, Content Ideas). The root cause is that the `tools` / `tool_choice` parameter used to force structured JSON output is not producing populated results from the AI gateway. The model returns an empty `result` object in the tool call arguments.
-
-## Solution
-
-Replace the tool-calling approach with direct JSON generation in the message content, and add robust parsing with logging for debugging.
-
----
+Integrate your two master prompts (one for Real Estate Agents, one for Business Brokers) into the backend so the AI always follows the correct style guide based on the user's role. The frontend will pass the user's role to the edge function, which selects the appropriate master prompt automatically.
 
 ## Changes
 
-### 1. Fix Edge Function (`supabase/functions/marketing-ai/index.ts`)
+### 1. Frontend: Pass user type to the edge function (`src/pages/Marketing.tsx`)
 
-- **Remove** the `tools` and `tool_choice` parameters from the AI gateway request body
-- **Add** explicit "Return valid JSON only, no markdown fencing" instruction to each system prompt
-- **Parse** the JSON directly from `choices[0].message.content` using a robust extraction function that strips markdown code fences and handles edge cases
-- **Add** `console.log` for the raw AI response content so future debugging is easier
-- **Add** a specific model parameter (`google/gemini-3-flash-preview`) to ensure consistent behavior
+- Fetch the user's `user_type` from the `profiles` table on mount (same pattern used in other pages)
+- Include `userType` in every `callMarketingAI` call so the backend knows which master prompt to use
+- The "Writing Style Instructions" textarea remains for additional per-request customization on top of the master prompt
 
-### 2. Add Writing Style Instructions (`src/pages/Marketing.tsx`)
+### 2. Backend: Embed both master prompts (`supabase/functions/marketing-ai/index.ts`)
 
-- Add a new **"Writing Style Instructions"** text area in the Global Preferences bar where users can type custom instructions (e.g., "Always mention our company name XYZ Realty", "Use short punchy sentences", "Reference NZ market trends")
-- Pass these custom instructions to the edge function as a `styleInstructions` parameter
-- The edge function appends these instructions to the system prompt for all three AI actions
+- Add two large constant strings: `MASTER_PROMPT_REAL_ESTATE` and `MASTER_PROMPT_BUSINESS_BROKER`
+- Each contains the full style requirements, platform rules, goal-type adaptation rules, and output format you provided
+- At the start of each action handler (`generate_post`, `generate_plan`, `generate_content_ideas`), prepend the appropriate master prompt to the system prompt based on `params.userType`
+- If no user type is provided, default to the Real Estate Agent prompt
+- The existing emoji toggle, tone toggle, and style instructions continue to be appended after the master prompt
 
-### 3. Improve Error Feedback
+### 3. What stays the same
 
-- In the edge function, if JSON parsing fails, return the raw AI content in the error message so the frontend can display it for debugging
-- In the frontend, show more descriptive toast messages when generation fails
-
----
+- All existing UI controls (goal type, style, CTA, platforms, emoji toggle, tone toggle, writing style textarea) remain unchanged
+- The JSON output format instructions remain in each action's system prompt
+- The robust JSON parsing logic stays as-is
 
 ## Technical Details
 
-**Edge function changes:**
+**Frontend (`Marketing.tsx`):**
+- Add `userType` state, fetched from `profiles` table on mount
+- In `callMarketingAI`, add `userType` to the params object
 
-```
-// Remove from request body:
-tools: [...]
-tool_choice: { ... }
+**Edge function (`marketing-ai/index.ts`):**
+- Two new constants at the top of the file containing the full master prompts
+- Selection logic: `const masterPrompt = params.userType === 'business_broker' ? MASTER_PROMPT_BUSINESS_BROKER : MASTER_PROMPT_REAL_ESTATE;`
+- Each action's system prompt becomes: `masterPrompt + actionSpecificInstructions + styleAppend`
 
-// Add to each system prompt:
-"Return ONLY valid JSON. No markdown, no code fences, no extra text."
-
-// Replace result extraction logic with:
-const content = data.choices?.[0]?.message?.content ?? "";
-console.log("AI raw content:", content.substring(0, 500));
-
-// Clean and parse:
-let cleaned = content.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-```
-
-**Frontend changes (Marketing.tsx):**
-
-- New state: `styleInstructions` (string)
-- New UI: A collapsible textarea in the preferences bar labeled "Custom Writing Style" with placeholder text like "e.g. Always use our brand name 'Elite Realty'. Keep sentences under 15 words."
-- Pass `styleInstructions` alongside `includeEmojis` and `tone` in `callMarketingAI`
-
-**Edge function prompt integration:**
-
-Each system prompt will append:
-```
-${params.styleInstructions ? `\n\nAdditional writing style instructions from the user: ${params.styleInstructions}` : ''}
-```
-
-This ensures all three generators (post, plan, content ideas) respect the user's custom style preferences.
+The master prompts encode all the rules you specified: platform-specific formatting (LinkedIn professional, TikTok script format, etc.), goal-type adaptation, style requirements (no em dashes, no cliches, no AI filler), and output format (Hook, Body, CTA, Hashtags, optional video script).
