@@ -1,19 +1,19 @@
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme, getThemeFamily, THEME_FAMILIES } from '@/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useDemo } from '@/contexts/DemoContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard, ArrowRightLeft, BookOpen, Receipt,
   CreditCard, Brain, Zap, User, Megaphone, FileText,
-  Palette, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Eye, Moon
+  Palette, Settings, LogOut, ChevronLeft, ChevronRight, Eye, Moon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,112 +30,78 @@ const navItems = [
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
-function getAppName(userType: string | null | undefined): { prefix: string; suffix: string } {
-  if (userType === 'business_broker') return { prefix: 'Hi', suffix: 'Broker' };
-  return { prefix: 'Hi', suffix: 'Agent' };
-}
-
-interface AppSidebarProps {
-  userType?: string | null;
-}
-
-export function AppSidebar({ userType }: AppSidebarProps) {
+export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
-  const { isDark, toggleDarkMode, activeTheme, setTheme } = useTheme();
+  const { isDark, toggleDarkMode } = useTheme();
   const { isDemoMode, enterDemo, exitDemo } = useDemo();
   const location = useLocation();
-  const [firstName, setFirstName] = useState<string>('');
-
-  const currentFamily = getThemeFamily(activeTheme);
-  const appName = getAppName(userType);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('first_name').eq('owner_user_id', user.id).maybeSingle()
-      .then(({ data }) => setFirstName(data?.first_name || user.email?.split('@')[0] || ''));
+    supabase.from('profiles').select('avatar_url').eq('owner_user_id', user.id).maybeSingle()
+      .then(({ data }) => setLogoUrl(data?.avatar_url || null));
   }, [user]);
 
   return (
-    <aside className={cn(
-      'flex flex-col border-r border-sidebar-border/20 bg-sidebar transition-[width] duration-300 ease-in-out sticky top-0 h-screen',
-      collapsed ? 'w-16' : 'w-64'
-    )}>
-      {/* Brand */}
-      <div className="px-5 py-6 flex items-start justify-between">
-        <div>
-          <span className="font-heading font-bold text-3xl text-sidebar-foreground">
-            {appName.prefix}<span className="text-primary">{appName.suffix}</span>
+    <aside
+      className={cn(
+        'flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200 sticky top-0 h-screen',
+        collapsed ? 'w-16' : 'w-60'
+      )}
+    >
+      {/* Logo */}
+      <div className="flex items-center gap-2 px-4 py-5">
+        {logoUrl ? (
+          <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-lg object-contain shrink-0" />
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm shrink-0">
+            Hi
+          </div>
+        )}
+        {!collapsed && (
+          <span className="font-heading font-bold text-lg text-sidebar-foreground truncate">
+            Hi<span className="text-primary">Agent</span>
           </span>
-          {!collapsed && firstName && (
-            <p className="text-sm text-muted-foreground mt-1">Hi, {firstName}</p>
-          )}
-        </div>
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-        >
-          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-        </button>
+        )}
       </div>
 
-      <Separator className="mb-3 opacity-50" />
+      <Separator className="mb-2" />
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-1">
-        {navItems.map((item) => {
-          const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
+      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+        {navItems.map(item => {
+          const isActive = item.to === '/' 
+            ? location.pathname === '/' 
+            : location.pathname.startsWith(item.to);
           return (
             <RouterNavLink
               key={item.to}
               to={item.to}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200',
-                isActive ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}>
-              <item.icon className="shrink-0" size={18} />
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-sidebar-accent text-primary'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+              )}
+            >
+              <item.icon className="h-4.5 w-4.5 shrink-0" size={18} />
               {!collapsed && <span className="truncate">{item.label}</span>}
             </RouterNavLink>
           );
         })}
       </nav>
 
-      <Separator className="mt-2 opacity-50" />
+      <Separator className="mt-2" />
 
-      {/* Theme & dark mode controls */}
+      {/* Dark mode toggle */}
       {!collapsed && (
-        <div className="px-4 py-3 space-y-3">
-          {/* Theme selector */}
-          <div className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-              <Palette size={12} /> Theme
-            </span>
-            <Select value={currentFamily} onValueChange={setTheme}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {THEME_FAMILIES.map(f => (
-                  <SelectItem key={f.id} value={f.id}>
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-0.5">
-                        <div className="h-3 w-3 rounded-full border border-border" style={{ background: f.previewBg }} />
-                        <div className="h-3 w-3 rounded-full border border-border" style={{ background: f.previewSidebar }} />
-                        <div className="h-3 w-3 rounded-full border border-border" style={{ background: f.previewPrimary }} />
-                      </div>
-                      <span>{f.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Dark mode */}
+        <div className="px-3 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Moon size={14} className="text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">Dark mode</span>
+              <Moon size={14} className="text-sidebar-foreground/50" />
+              <span className="text-xs font-medium text-sidebar-foreground/50">Dark mode</span>
             </div>
             <Switch checked={isDark} onCheckedChange={toggleDarkMode} className="scale-90" />
           </div>
@@ -143,23 +109,35 @@ export function AppSidebar({ userType }: AppSidebarProps) {
       )}
 
       {/* Footer */}
-      <div className="p-3 space-y-1">
+      <div className="p-2 space-y-1">
         <button
           onClick={isDemoMode ? exitDemo : enterDemo}
           className={cn(
-            'flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200',
-            isDemoMode ? 'bg-accent/10 text-accent' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-          )}>
+            'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            isDemoMode
+              ? 'bg-accent/10 text-accent'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+          )}
+        >
           <Eye size={16} className="shrink-0" />
           {!collapsed && <span>{isDemoMode ? 'Exit Demo' : 'Try Demo'}</span>}
         </button>
 
         <button
           onClick={signOut}
-          className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-destructive transition-all duration-200">
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-destructive transition-colors"
+        >
           <LogOut size={18} className="shrink-0" />
           {!collapsed && <span>Sign Out</span>}
         </button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-full justify-center text-muted-foreground"
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </Button>
       </div>
     </aside>
   );

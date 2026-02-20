@@ -1,139 +1,190 @@
 
-# Dynamic Branding, Theme Backgrounds, Sidebar Collapse, and Dashboard Polish
+# Premium Visual Overhaul — Outstaff-Inspired Design
 
 ## Overview
 
-Four changes:
-1. Dynamic app name: "HiAgent" for real estate agents, "HiBroker" for business brokers -- everywhere
-2. Richer theme backgrounds: Ocean and Sunset get more saturated, non-white backgrounds; Sunset sidebar text gets lighter
-3. Bigger logo in dashboard header, aligned with "Dashboard" title
-4. Move sidebar collapse toggle to top-right with a better icon
+Transform the entire app's visual identity to match the premium, modern dashboard shown in the reference screenshot. This includes larger border radii, glassmorphism effects, smoother page/sidebar transitions, refined card styles with subtle gradients, and polished micro-interactions throughout.
+
+## Key Design Principles from Reference
+
+- **Extra-rounded cards** (border-radius ~1rem / 16px instead of current 12px)
+- **Soft, layered card shadows** with slightly elevated feel
+- **Lavender/lilac background** with white cards (already close, needs refinement)
+- **Smooth sidebar navigation transitions** with active state highlighting (filled pill background)
+- **Page content transitions** — fade + slide when switching routes
+- **Dialog/modal animations** — smoother scale + backdrop blur
+- **Micro-interactions** — hover lift on cards, subtle scale on buttons, smooth color transitions on nav items
+- **Cleaner typography spacing** — more whitespace, larger headings
 
 ---
 
-## 1. Dynamic App Name Based on User Type
+## Changes
 
-The `user_type` field in `profiles` is either `real_estate_agent` or `business_broker`. We need to propagate this so the branding text changes throughout the app.
+### 1. CSS Variables and Global Styles (`src/index.css`)
 
-**Files:** `AppLayout.tsx`, `AppSidebar.tsx`, `Dashboard.tsx`, `UserTypeSelector.tsx`, `QuickSetup.tsx`
+- Increase `--radius` from `0.75rem` to `1rem` for rounder cards matching the screenshot
+- Add new CSS variables: `--shadow-elevated` for hover states, `--glass` for glassmorphism
+- Add page transition keyframes: `pageEnter` (fade + slide up), `pageExit`
+- Add card hover animation: subtle translateY(-2px) + shadow increase
+- Add `.glass` utility class: `backdrop-blur-xl bg-card/80`
+- Enhance scrollbar styling with smoother rounded thumb
+- Add smooth transition to body for dark mode color switches
 
-- In `AppLayout.tsx`, the `userType` state is already fetched. Pass it down or make it available via a shared mechanism. The simplest approach: create a small React context or pass the user type to AppSidebar as a prop.
-- Create a helper: `getAppName(userType)` returns `{ prefix: 'Hi', suffix: 'Agent' }` or `{ prefix: 'Hi', suffix: 'Broker' }`.
-- Replace all hardcoded `Hi<span>Agent</span>` with the dynamic version in:
-  - `AppSidebar.tsx` (sidebar brand)
-  - `AppLayout.tsx` (top header bar)
-  - `UserTypeSelector.tsx` (personalization text)
-  - Loading spinner text in `AppLayout.tsx`
-- The `AppSidebar` currently fetches `first_name` separately. Update it to also fetch `user_type`, or receive it as a prop from `AppLayout`.
+### 2. Tailwind Config (`tailwind.config.ts`)
 
-**Approach:** Pass `userType` as a prop from `AppLayout` to `AppSidebar` to avoid a duplicate query, since `AppLayout` already fetches it.
+- Add new keyframes: `page-enter`, `card-hover-up`, `sidebar-highlight`
+- Add corresponding animation utilities
+- Add `glass` and `elevated-hover` as reusable shadow values
+- Increase default transition duration references
 
----
+### 3. Sidebar — Premium Transitions (`src/components/AppSidebar.tsx`)
 
-## 2. Richer Theme Backgrounds
+- Add `transition-all duration-200` to all nav links (already partially there)
+- Active nav item: add a smooth pill background animation using CSS transition on background-color + transform
+- Add slight left-border indicator (3px rounded primary bar) on active item, animated in with scaleY
+- Sidebar collapse/expand: add `transition-[width] duration-300 ease-in-out` for smoother width change
+- Logo area: add subtle hover scale effect
 
-**File:** `ThemeContext.tsx`
+### 4. Page Transitions (`src/components/AppLayout.tsx`)
 
-Current values are too close to white. Update:
+- Wrap `{children}` in a container with a CSS animation that triggers on route change
+- Use a `key={location.pathname}` on the content wrapper so React re-mounts with the fade-in animation on navigation
+- Animation: `animate-page-enter` — opacity 0 to 1, translateY(8px) to 0, over 300ms ease-out
 
-- **Ocean light mode** `--background`: change from `210 20% 96%` to `210 25% 88%` (a visible steel-blue tint, not white). Also adjust `--muted` and `--secondary` to be proportionally darker so they remain distinct.
-- **Sunset light mode** `--background`: change from `25 30% 96%` to `30 35% 86%` (a warm sand/cream tone). Adjust `--muted` and `--secondary` similarly.
-- **Sunset sidebar text** `--sidebar-foreground`: change from `25 15% 90%` to `25 10% 95%` (brighter/whiter for better readability against the dark sidebar).
-- **Lavender** stays as-is (user said it's okay).
+### 5. Card Component — Premium Style (`src/components/ui/card.tsx`)
 
-Also update the `THEME_FAMILIES` preview colors to match the new background values.
+- Update default Card classes: increase rounding to `rounded-2xl`, add `transition-all duration-200`
+- Add hover effect: `hover:shadow-elevated hover:-translate-y-0.5` for a subtle lift
+- Keep border but make it softer: `border-border/50` for a more subtle divider
 
----
+### 6. StatCard — Refined Look (`src/components/StatCard.tsx`)
 
-## 3. Bigger Logo on Dashboard, Aligned with Title
+- Add gradient backgrounds: subtle `bg-gradient-to-br from-card to-card/80`
+- Icon container: make it slightly larger (h-11 w-11), add `rounded-xl` instead of `rounded-lg`
+- Add `group` class to parent, icon scales slightly on hover: `group-hover:scale-110 transition-transform`
+- Value text: slightly larger (text-3xl on desktop)
 
-**File:** `AppLayout.tsx`
+### 7. Button — Smoother Interactions (`src/components/ui/button.tsx`)
 
-Currently the header shows "HiAgent" at `text-2xl` absolutely centered. Change to:
-- Increase to `text-5xl` (4x bigger than the original small size)
-- Position it on the left side of the header (not absolute centered), so it aligns with the "Dashboard" title below it
-- Keep it visually centered within the content area (using normal flow, not absolute positioning)
+- Add `transition-all duration-200` (currently just `transition-colors`)
+- Default variant: add `hover:shadow-md hover:-translate-y-px active:translate-y-0` for press feedback
+- Increase border-radius to `rounded-xl` for all sizes
+- Ghost variant: add `hover:bg-accent/50` for softer hover
 
-**File:** `AppLayout.tsx` header section:
-- Remove `absolute left-1/2 -translate-x-1/2`
-- Make the brand name the first element, left-aligned
-- Size: `text-5xl font-heading font-bold`
-- Push search/bell/avatar to the right with `ml-auto`
+### 8. Dialog — Premium Open/Close (`src/components/ui/dialog.tsx`)
 
----
+- Overlay: change from `bg-black/80` to `bg-black/40 backdrop-blur-sm` for a frosted glass effect
+- Content: add `rounded-2xl` and `shadow-float` for more depth
+- Smoother animation: keep existing but extend duration to 250ms
 
-## 4. Move Sidebar Collapse Toggle to Top-Right
+### 9. Tabs — Polished Switcher (`src/components/ui/tabs.tsx`)
 
-**File:** `AppSidebar.tsx`
+- TabsList: `rounded-xl` instead of `rounded-md`, add `p-1.5` for more padding
+- TabsTrigger: `rounded-lg` instead of `rounded-sm`, add `transition-all duration-200`
+- Active state: add subtle shadow `data-[state=active]:shadow-sm`
 
-Currently the collapse button is at the very bottom of the sidebar using `ChevronLeft`/`ChevronRight`. Move it to the top-right corner of the sidebar brand area, and use a better icon:
-- Use `PanelLeftClose` (when expanded) and `PanelLeftOpen` (when collapsed) from lucide-react -- these clearly indicate "collapse/expand sidebar"
-- Position it in the brand header area, top-right corner
-- Remove the bottom collapse button entirely
+### 10. Badge — Softer Pills (`src/components/ui/badge.tsx`)
+
+- Already rounded-full (good)
+- Add `transition-colors duration-200` for smoother variant changes
+
+### 11. Bottom Nav — Glass Effect (`src/components/BottomNav.tsx`)
+
+- Enhance backdrop blur: `backdrop-blur-xl bg-card/70` for stronger glass effect
+- Active icon: add scale transition `transition-all duration-200` with `scale-110` when active
+- Add a small dot indicator below active icon instead of just color change
+
+### 12. Progress Bar — Animated Fill (`src/components/ui/progress.tsx`)
+
+- Add gradient to the indicator: `bg-gradient-to-r from-primary to-primary/70`
+- Add `transition-all duration-500 ease-out` for smoother fill animation
+- Increase rounding to match new radius
+
+### 13. PageHeader — More Presence (`src/components/PageHeader.tsx`)
+
+- Increase heading size to `text-3xl` on desktop
+- Add bottom margin separator or subtle gradient underline
+- Add `animate-page-enter` to the header for coordinated page entry
 
 ---
 
 ## Technical Details
 
-### Helper function for app name:
+### New CSS keyframes in `src/index.css`:
 
 ```text
-function getAppName(userType: string | null): { prefix: string; suffix: string } {
-  if (userType === 'business_broker') return { prefix: 'Hi', suffix: 'Broker' };
-  return { prefix: 'Hi', suffix: 'Agent' };
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardHover {
+  to { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 }
 ```
 
-### AppLayout prop passing:
+### New Tailwind animation in `tailwind.config.ts`:
 
 ```text
-// In AppLayout, pass userType to AppSidebar:
-<AppSidebar userType={userType} />
-
-// AppSidebar accepts:
-interface AppSidebarProps { userType?: string | null; }
+keyframes: {
+  "page-enter": {
+    "0%": { opacity: "0", transform: "translateY(12px)" },
+    "100%": { opacity: "1", transform: "translateY(0)" },
+  },
+},
+animation: {
+  "page-enter": "page-enter 0.35s ease-out",
+}
 ```
 
-### Updated theme background values (ThemeContext.tsx):
+### AppLayout route-keyed transition:
 
 ```text
-// Ocean light
-'--background': '210 25% 88%'
-'--muted': '210 18% 83%'
-'--secondary': '210 20% 85%'
+// In AppLayout, import useLocation
+const location = useLocation();
 
-// Sunset light
-'--background': '30 35% 86%'
-'--muted': '25 25% 82%'
-'--secondary': '25 28% 83%'
-'--sidebar-foreground': '25 10% 95%'
-```
-
-### Sidebar collapse button (top-right of brand area):
-
-```text
-<div className="px-5 py-6 flex items-start justify-between">
-  <div>
-    <span className="font-heading font-bold text-3xl ...">Hi<span ...>Agent</span></span>
-    {!collapsed && firstName && <p ...>Hi, {firstName}</p>}
-  </div>
-  <button onClick={() => setCollapsed(!collapsed)} className="...">
-    {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-  </button>
+// Wrap children with key for re-mount animation
+<div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
+  {children}
 </div>
 ```
 
-### Dashboard header (AppLayout.tsx):
+### Card component update:
 
 ```text
-<div className="flex items-center justify-between px-6 py-4 shrink-0">
-  <span className="font-heading font-bold text-5xl text-foreground">
-    Hi<span className="text-primary">{appName.suffix}</span>
-  </span>
-  <div className="flex items-center gap-3">
-    <!-- search, bell, avatar -->
-  </div>
-</div>
+<div className={cn(
+  "rounded-2xl border border-border/50 bg-card text-card-foreground shadow-card transition-all duration-200 hover:shadow-elevated hover:-translate-y-0.5",
+  className
+)} />
 ```
 
-**Files changed:** 3 files (`ThemeContext.tsx`, `AppSidebar.tsx`, `AppLayout.tsx`)
+### Dialog overlay glass effect:
+
+```text
+<DialogPrimitive.Overlay className={cn(
+  "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm ...",
+  className
+)} />
+```
+
+### Sidebar active indicator:
+
+```text
+<RouterNavLink className={cn(
+  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+  isActive
+    ? 'bg-primary text-primary-foreground shadow-sm'
+    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
+)} />
+```
+
+### Button refinement:
+
+```text
+"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none ..."
+
+// default variant:
+"bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm"
+```
+
+**Files changed:** 11 files (index.css, tailwind.config.ts, AppLayout.tsx, AppSidebar.tsx, card.tsx, StatCard.tsx, button.tsx, dialog.tsx, tabs.tsx, progress.tsx, PageHeader.tsx, BottomNav.tsx, badge.tsx)

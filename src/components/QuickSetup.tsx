@@ -8,9 +8,10 @@ import { SetupCommissionStep } from '@/components/setup/SetupCommissionStep';
 import { SetupGoalStep } from '@/components/setup/SetupGoalStep';
 import { SetupPersonalStep } from '@/components/setup/SetupPersonalStep';
 import { SetupLogoStep } from '@/components/setup/SetupLogoStep';
+import { SetupThemeStep, type ThemeData } from '@/components/setup/SetupThemeStep';
 import { SetupReviewStep } from '@/components/setup/SetupReviewStep';
 
-const STEP_LABELS = ['Commission', 'Goal', 'Details', 'Logo', 'Review'];
+const STEP_LABELS = ['Commission', 'Goal', 'Details', 'Logo', 'Theme', 'Review'];
 
 interface QuickSetupProps {
   onComplete: () => void;
@@ -22,6 +23,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
   const [saving, setSaving] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
 
+  // Step 1 - Commission
   const [commission, setCommission] = useState({
     businessSaleUser: 0.75, businessSaleCompany: 0.25,
     leaseUser: 0.80, leaseCompany: 0.20,
@@ -29,6 +31,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
     withholdingRate: 0.20,
   });
 
+  // Step 2 - Goal
   const currentYear = new Date().getFullYear();
   const [goal, setGoal] = useState({
     targetNetAmount: 200000,
@@ -36,27 +39,44 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
     periodEnd: `${currentYear + 1}-03-31`,
   });
 
+  // Step 3 - Personal
   const [personal, setPersonal] = useState({
     firstName: '', lastName: '', phone: '', email: '',
     companyName: '', title: '',
   });
 
+  // Step 4 - Logo
   const [logos, setLogos] = useState<{ url: string; name: string }[]>([]);
   const [activeLogo, setActiveLogo] = useState<string | null>(null);
   const [logoSkipped, setLogoSkipped] = useState(false);
 
+  // Step 5 - Theme
+  const [theme, setTheme] = useState<ThemeData>({
+    themeBase: 'light',
+    primaryColor: '#7C5CFC',
+    secondaryColor: '#E8E0F7',
+    accentColor: '#0ABAB5',
+    backgroundColor: '#F5F3FA',
+    textColor: '#1E1B2E',
+    backgroundMode: 'solid',
+    backgroundTextureId: null,
+  });
+
+  // Fetch user type
   useEffect(() => {
     if (!user) return;
     supabase.from('profiles').select('user_type').eq('owner_user_id', user.id).maybeSingle()
       .then(({ data }) => { if (data?.user_type) setUserType(data.user_type); });
   }, [user]);
 
+  // Pre-fill email from auth user
   useEffect(() => {
     if (user?.email && !personal.email) {
       setPersonal(p => ({ ...p, email: user.email! }));
     }
   }, [user]);
 
+  // Write audit log helper
   async function writeAuditLog(eventType: string, details?: Record<string, unknown>) {
     if (!user) return;
     await supabase.from('audit_logs').insert([{
@@ -66,13 +86,17 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
     }]);
   }
 
-  useEffect(() => { writeAuditLog('SetupStarted'); }, []);
+  // Log setup started on first render
+  useEffect(() => {
+    writeAuditLog('SetupStarted');
+  }, []);
 
   async function handleComplete(skipped = false) {
     if (!user) return;
     setSaving(true);
 
     try {
+      // Save profile
       await supabase.from('profiles').update({
         first_name: personal.firstName || null,
         last_name: personal.lastName || null,
@@ -88,14 +112,21 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         property_sale_company_share: commission.propertyCompany,
         withholding_rate: commission.withholdingRate,
         active_theme: 'lavender',
+        background_mode: theme.backgroundMode,
+        background_asset_id: theme.backgroundTextureId,
         avatar_url: activeLogo || null,
       }).eq('owner_user_id', user.id);
 
+      // Save brand profile if colors set
       await supabase.from('brand_profiles').upsert({
         owner_user_id: user.id,
+        primary_color: theme.primaryColor,
+        secondary_color: theme.secondaryColor,
+        accent_color: theme.accentColor,
         logo_url: activeLogo || null,
       }, { onConflict: 'owner_user_id' });
 
+      // Save goal plan
       if (goal.targetNetAmount > 0) {
         await supabase.from('goal_plans').upsert({
           owner_user_id: user.id,
@@ -107,13 +138,16 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         }, { onConflict: 'owner_user_id' });
       }
 
+      // Update setup state
       await supabase.from('setup_state').upsert({
         owner_user_id: user.id,
         current_step: STEP_LABELS.length,
         is_complete: !skipped,
         skipped,
+        
       }, { onConflict: 'owner_user_id' });
 
+      // Write audit logs
       if (!skipped) {
         await Promise.all([
           writeAuditLog('CommissionSettingsUpdated', {
@@ -123,6 +157,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
           }),
           writeAuditLog('GoalSet', { targetNetAmount: goal.targetNetAmount }),
           writeAuditLog('BrandingUpdated', { hasLogo: !!activeLogo, logoSkipped }),
+          writeAuditLog('ThemeUpdated', { themeBase: theme.themeBase, backgroundMode: theme.backgroundMode }),
           writeAuditLog('SetupCompleted'),
         ]);
       } else {
@@ -144,6 +179,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg space-y-6 animate-fade-in">
+        {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-heading font-bold text-lg">
@@ -153,19 +189,55 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
           <h1 className="font-heading text-2xl font-bold text-foreground">Welcome to HiAgent</h1>
           <p className="text-muted-foreground text-sm">Let's personalise your experience</p>
 
+          {/* Steps indicator */}
           <div className="flex justify-center gap-1.5 pt-2">
             {STEP_LABELS.map((label, i) => (
               <div key={i} className="flex flex-col items-center gap-1">
-                <div className={cn('h-1.5 rounded-full transition-all duration-300', i <= step ? 'bg-primary w-6' : 'bg-muted w-3')} />
-                <span className={cn('text-[9px] transition-colors', i <= step ? 'text-primary font-medium' : 'text-muted-foreground')}>{label}</span>
+                <div
+                  className={cn(
+                    'h-1.5 rounded-full transition-all duration-300',
+                    i <= step ? 'bg-primary w-6' : 'bg-muted w-3'
+                  )}
+                />
+                <span className={cn(
+                  'text-[9px] transition-colors',
+                  i <= step ? 'text-primary font-medium' : 'text-muted-foreground'
+                )}>
+                  {label}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        {step === 0 && <SetupCommissionStep data={commission} onChange={setCommission} onNext={() => setStep(1)} userType={userType} />}
-        {step === 1 && <SetupGoalStep data={goal} onChange={setGoal} onNext={() => setStep(2)} onBack={() => setStep(0)} />}
-        {step === 2 && <SetupPersonalStep data={personal} onChange={setPersonal} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+        {/* Step content */}
+        {step === 0 && (
+          <SetupCommissionStep
+            data={commission}
+            onChange={setCommission}
+            onNext={() => setStep(1)}
+            userType={userType}
+          />
+        )}
+
+        {step === 1 && (
+          <SetupGoalStep
+            data={goal}
+            onChange={setGoal}
+            onNext={() => setStep(2)}
+            onBack={() => setStep(0)}
+          />
+        )}
+
+        {step === 2 && (
+          <SetupPersonalStep
+            data={personal}
+            onChange={setPersonal}
+            onNext={() => setStep(3)}
+            onBack={() => setStep(1)}
+          />
+        )}
+
         {step === 3 && (
           <SetupLogoStep
             logos={logos}
@@ -176,7 +248,17 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
             onSkipLogo={() => { setLogoSkipped(true); setStep(4); }}
           />
         )}
+
         {step === 4 && (
+          <SetupThemeStep
+            data={theme}
+            onChange={setTheme}
+            onNext={() => setStep(5)}
+            onBack={() => setStep(3)}
+          />
+        )}
+
+        {step === 5 && (
           <SetupReviewStep
             data={{
               businessSplit: `${Math.round(commission.businessSaleUser * 100)}/${Math.round(commission.businessSaleCompany * 100)}`,
@@ -188,16 +270,22 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
               email: personal.email,
               hasLogo: !!activeLogo,
               logoUrl: activeLogo,
+              themeBase: theme.themeBase,
+              backgroundMode: theme.backgroundMode,
             }}
             saving={saving}
             onApply={() => handleComplete(false)}
-            onBack={() => setStep(3)}
+            onBack={() => setStep(4)}
           />
         )}
 
+        {/* Skip all */}
         {step < lastStep && (
           <div className="text-center">
-            <button onClick={() => handleComplete(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
+            <button
+              onClick={() => handleComplete(true)}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
               <SkipForward size={12} />
               Skip setup entirely
             </button>

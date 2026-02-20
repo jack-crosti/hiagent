@@ -88,7 +88,7 @@ export default {
       },
       boxShadow: {
         'card': 'var(--shadow-card)',
-        'elevated': 'var(--shadow-elevated)',
+        'elevated': 'var(--shadow-md)',
         'float': 'var(--shadow-lg)',
       },
       keyframes: {
@@ -100,15 +100,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "page-enter": {
-          "0%": { opacity: "0", transform: "translateY(12px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "page-enter": "page-enter 0.35s ease-out",
       },
     },
   },
