@@ -28,8 +28,8 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
       <div className="w-full max-w-lg space-y-6 animate-fade-in p-4">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
-            <span className="font-heading font-bold text-4xl text-white">
-              Hi<span className="text-white/70">Agent</span>
+            <span className="font-heading font-bold text-6xl text-white">
+              Hi<span className="text-violet-500">Agent</span>
             </span>
           </div>
           <h1 className="font-heading text-2xl font-bold text-white">What best describes you?</h1>
@@ -42,7 +42,7 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
             className={cn(
               'rounded-xl border-2 p-6 text-center transition-all backdrop-blur-sm',
               selected === 'business_broker'
-                ? 'border-white bg-white/20 ring-2 ring-white/30'
+                ? 'border-violet-500 bg-white/25 ring-4 ring-violet-500/40 shadow-lg shadow-violet-500/20 scale-[1.03]'
                 : 'border-white/20 bg-white/10 hover:border-white/40'
             )}
           >
@@ -55,7 +55,7 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
             className={cn(
               'rounded-xl border-2 p-6 text-center transition-all backdrop-blur-sm',
               selected === 'real_estate_agent'
-                ? 'border-white bg-white/20 ring-2 ring-white/30'
+                ? 'border-violet-500 bg-white/25 ring-4 ring-violet-500/40 shadow-lg shadow-violet-500/20 scale-[1.03]'
                 : 'border-white/20 bg-white/10 hover:border-white/40'
             )}
           >
