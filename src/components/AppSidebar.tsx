@@ -36,35 +36,29 @@ export function AppSidebar() {
   const { isDark, toggleDarkMode } = useTheme();
   const { isDemoMode, enterDemo, exitDemo } = useDemo();
   const location = useLocation();
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState<string>('');
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('avatar_url').eq('owner_user_id', user.id).maybeSingle().
-    then(({ data }) => setLogoUrl(data?.avatar_url || null));
+    supabase.from('profiles').select('first_name').eq('owner_user_id', user.id).maybeSingle().
+    then(({ data }) => setFirstName(data?.first_name || user.email?.split('@')[0] || ''));
   }, [user]);
 
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-sidebar-border/40 bg-sidebar transition-[width] duration-300 ease-in-out sticky top-0 h-screen',
+        'flex flex-col border-r border-sidebar-border/20 bg-sidebar transition-[width] duration-300 ease-in-out sticky top-0 h-screen',
         collapsed ? 'w-16' : 'w-64'
       )}>
 
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-6">
-        {logoUrl ?
-        <img src={logoUrl} alt="Logo" className="h-9 w-9 rounded-xl object-contain shrink-0" /> :
-
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-heading font-bold text-sm shrink-0">
-            Hi
-          </div>
-        }
-        {!collapsed &&
-        <span className="font-heading font-bold text-lg text-sidebar-foreground truncate">
-            Hi<span className="text-primary">Agent</span>
-          </span>
-        }
+      {/* Brand */}
+      <div className="px-5 py-6">
+        <span className="font-heading font-bold text-3xl text-sidebar-foreground">
+          Hi<span className="text-primary">Agent</span>
+        </span>
+        {!collapsed && firstName && (
+          <p className="text-sm text-muted-foreground mt-1">Hi, {firstName}</p>
+        )}
       </div>
 
       <Separator className="mb-3 opacity-50" />

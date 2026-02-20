@@ -22,7 +22,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ totalIncome: 0, totalExpenses: 0, pendingGst: 0, dealsPipeline: 0, dealsCount: 0, isDemo: true });
   const [txns, setTxns] = useState<TxnRow[]>([]);
   const [deals, setDeals] = useState<DealRow[]>([]);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  
 
   useEffect(() => {
     if (!user) return;
@@ -36,8 +36,6 @@ export default function Dashboard() {
       supabase.from('gst_periods').select('net_gst, status').eq('owner_user_id', user!.id).eq('status', 'open'),
       supabase.from('profiles').select('avatar_url').eq('owner_user_id', user!.id).maybeSingle(),
     ]);
-
-    setLogoUrl(profile?.avatar_url || null);
 
     const income = txnsData?.filter(t => t.type === 'credit').reduce((s, t) => s + Number(t.amount), 0) ?? 0;
     const expenses = txnsData?.filter(t => t.type === 'debit').reduce((s, t) => s + Math.abs(Number(t.amount)), 0) ?? 0;
@@ -57,9 +55,6 @@ export default function Dashboard() {
         description={`Welcome back${stats.isDemo ? ' — try demo mode to explore' : ''}`}
         action={
           <div className="flex items-center gap-3">
-            {logoUrl && (
-              <img src={logoUrl} alt="Logo" className="h-8 w-auto object-contain rounded-xl" />
-            )}
             <Link to="/personal-finance">
               <Button size="sm"><Target size={16} className="mr-1.5" />View Goals</Button>
             </Link>

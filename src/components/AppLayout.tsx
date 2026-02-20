@@ -89,8 +89,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {!isMobile && <AppSidebar />}
       <main className="flex-1 flex flex-col min-h-screen">
         {/* Top header bar */}
-        <div className="flex items-center justify-between px-6 py-4 shrink-0">
-          <div />
+        <div className="flex items-center justify-between px-6 py-4 shrink-0 relative">
+          <span className="font-heading font-bold text-2xl text-foreground absolute left-1/2 -translate-x-1/2">
+            Hi<span className="text-primary">Agent</span>
+          </span>
           <div className="flex items-center gap-3">
             <button className="p-2.5 rounded-xl hover:bg-card hover:shadow-card transition-all duration-200">
               <Search size={18} className="text-muted-foreground" />
