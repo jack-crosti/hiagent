@@ -39,9 +39,9 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
       <div className="w-full max-w-lg space-y-6 animate-fade-in p-4">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-heading font-bold text-lg">
-              Hi
-            </div>
+            <span className="font-heading font-bold text-4xl text-white">
+              Hi<span className="text-white/70">Agent</span>
+            </span>
           </div>
           <h1 className="font-heading text-2xl font-bold text-white">What best describes you?</h1>
           <p className="text-white/70 text-sm">We'll personalise your experience to match your workflow</p>
