@@ -110,7 +110,7 @@ serve(async (req) => {
       : "";
 
     if (action === "generate_post") {
-      const { goal, style, cta, platforms, listingName, includeEmojis, tone } = params;
+      const { goal, style, cta, platforms, listingName, listingUrl, includeEmojis, tone } = params;
       const emojiInstruction = includeEmojis ? "Use relevant emojis throughout to make it engaging." : "Do NOT use any emojis at all. Keep it clean and professional.";
       const toneInstruction = tone === "casual" ? "Use a casual, friendly, conversational tone." : "Use a professional, credible, authoritative tone.";
 
@@ -124,6 +124,7 @@ Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exa
       userPrompt = `Generate a ${style} social media post for ${platforms.join(", ")}.
 Goal: ${goal}
 ${listingName ? `Listing: ${listingName}` : ""}
+${listingUrl ? `Listing URL: ${listingUrl}` : ""}
 CTA: ${cta}
 Keep it concise and platform-appropriate.`;
 
