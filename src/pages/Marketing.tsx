@@ -74,6 +74,7 @@ export default function MarketingPage() {
   const [includeEmojis, setIncludeEmojis] = useState(true);
   const [tone, setTone] = useState<'professional' | 'casual'>('professional');
   const [styleInstructions, setStyleInstructions] = useState('');
+  const [userType, setUserType] = useState<string | null>(null);
 
   // Post builder state
   const [selectedGoal, setSelectedGoal] = useState('');
@@ -101,8 +102,14 @@ export default function MarketingPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('marketing_plans').select('*').eq('owner_user_id', user.id)
-      .then(({ data }) => { setPlans(data ?? []); setLoading(false); });
+    Promise.all([
+      supabase.from('marketing_plans').select('*').eq('owner_user_id', user.id),
+      supabase.from('profiles').select('user_type').eq('owner_user_id', user.id).maybeSingle(),
+    ]).then(([plansRes, profileRes]) => {
+      setPlans(plansRes.data ?? []);
+      setUserType(profileRes.data?.user_type ?? null);
+      setLoading(false);
+    });
   }, [user]);
 
   function togglePlatform(p: string) {
@@ -121,7 +128,7 @@ export default function MarketingPage() {
 
   async function callMarketingAI(action: string, params: any) {
     const { data, error } = await supabase.functions.invoke('marketing-ai', {
-      body: { action, params: { ...params, includeEmojis, tone, styleInstructions: styleInstructions.trim() || undefined } },
+      body: { action, params: { ...params, includeEmojis, tone, styleInstructions: styleInstructions.trim() || undefined, userType: userType || undefined } },
     });
     if (error) throw new Error(error.message || 'AI request failed');
     if (data?.error) throw new Error(data.error);
