@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserType } from '@/contexts/UserTypeContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
@@ -25,11 +26,13 @@ interface DealDialogProps {
 
 export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProps) {
   const { user } = useAuth();
+  const { isBroker } = useUserType();
   const [saving, setSaving] = useState(false);
   const [splits, setSplits] = useState<UserSplits>(DEFAULT_SPLITS);
+  const defaultDealType = isBroker ? 'business_sale' : 'property_sale';
   const [form, setForm] = useState({
     listing_name: '',
-    deal_type: 'business_sale' as 'business_sale' | 'lease' | 'property_sale',
+    deal_type: defaultDealType as 'business_sale' | 'lease' | 'property_sale',
     sale_price: '',
     annual_rent_excl_gst: '',
     probability: '50',
@@ -74,7 +77,7 @@ export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProp
       });
     } else {
       setForm({
-        listing_name: '', deal_type: 'business_sale', sale_price: '',
+        listing_name: '', deal_type: defaultDealType, sale_price: '',
         annual_rent_excl_gst: '', probability: '50', expected_close_date: '',
         override_type: '', override_value: '',
       });
@@ -164,7 +167,7 @@ export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProp
           <div className="space-y-2">
             <Label>Listing Name</Label>
             <Input
-              placeholder="e.g. Café & Restaurant - Ponsonby"
+              placeholder={isBroker ? "e.g. Café & Restaurant - Ponsonby" : "e.g. 3-bed Villa - Ponsonby"}
               value={form.listing_name}
               onChange={e => setForm(f => ({ ...f, listing_name: e.target.value }))}
             />
@@ -176,7 +179,7 @@ export function DealDialog({ open, onOpenChange, deal, onSaved }: DealDialogProp
               <Select value={form.deal_type} onValueChange={v => setForm(f => ({ ...f, deal_type: v as any }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="business_sale">Business Sale</SelectItem>
+                  {isBroker && <SelectItem value="business_sale">Business Sale</SelectItem>}
                   <SelectItem value="property_sale">Property Sale</SelectItem>
                   <SelectItem value="lease">Lease</SelectItem>
                 </SelectContent>

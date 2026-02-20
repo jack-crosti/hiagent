@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserType } from '@/contexts/UserTypeContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/PageHeader';
@@ -28,6 +29,7 @@ export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { refreshBrand } = useTheme();
+  const { isBroker } = useUserType();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -193,6 +195,7 @@ export default function SettingsPage() {
               </p>
             </div>
             <Separator />
+            {isBroker && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Business Sale — Your Share (%)</Label>
@@ -204,6 +207,7 @@ export default function SettingsPage() {
                 <Input type="number" disabled value={splits.business_sale_company_share} />
               </div>
             </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Lease — Your Share (%)</Label>
@@ -244,7 +248,7 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Company / Brokerage</Label><Input value={profile.company_name} onChange={e => setProfile(p => ({ ...p, company_name: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Title</Label><Input placeholder="e.g. Business Broker" value={profile.title} onChange={e => setProfile(p => ({ ...p, title: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Title</Label><Input placeholder={isBroker ? "e.g. Business Broker" : "e.g. Sales Consultant"} value={profile.title} onChange={e => setProfile(p => ({ ...p, title: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Phone</Label><Input type="tel" placeholder="+64 21 123 4567" value={profile.phone} onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))} /></div>

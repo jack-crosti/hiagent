@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserType } from '@/contexts/UserTypeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
@@ -19,11 +20,18 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-const GOAL_TYPES = [
+const GOAL_TYPES_AGENT = [
   'New listing launch', 'Listing just sold', 'Buyer wanted',
   'Vendor lead generation', 'Brand awareness', 'Educational for sellers',
   'Educational for buyers', 'Testimonial or case study', 'Behind the scenes',
   'Open home promotion', 'Price reduction', 'Market commentary',
+];
+
+const GOAL_TYPES_BROKER = [
+  'New business listing', 'Business just sold', 'Buyer search',
+  'Vendor lead generation', 'Brand awareness', 'Educational for vendors',
+  'Educational for buyers', 'Testimonial or case study', 'Behind the scenes',
+  'Confidential listing', 'Price reduction', 'Market commentary',
 ];
 
 const STYLE_MODES = [
@@ -35,25 +43,42 @@ const STYLE_MODES = [
   { id: 'aspirational', label: 'Aspirational & lifestyle', icon: Sparkles },
 ];
 
-const CTA_OPTIONS = [
+const CTA_OPTIONS_AGENT = [
   'Enquire now', 'Book a call', 'Download info pack', 'Join buyer list',
   'Register interest', 'DM me for details', 'Visit open home', 'Get a free appraisal',
   'View listing', 'Contact me today',
+];
+
+const CTA_OPTIONS_BROKER = [
+  'Enquire now', 'Book a call', 'Request info memorandum', 'Join buyer list',
+  'Register interest', 'DM me for details', 'Book a confidential discussion',
+  'View business profile', 'Get a free business appraisal', 'Contact me today',
 ];
 
 const PLATFORMS = ['LinkedIn', 'Instagram', 'Facebook', 'TikTok', 'YouTube', 'X (Twitter)'];
 
 const PLAN_FREQUENCIES = ['Daily', '3x per week', 'Weekly', 'Fortnightly'];
 
-const PLAN_GOALS = [
+const PLAN_GOALS_AGENT = [
   'Generate seller leads', 'Attract buyers', 'Build personal brand',
   'Promote active listings', 'Grow social following', 'Nurture database',
 ];
 
-const CONTENT_TOPICS = [
+const PLAN_GOALS_BROKER = [
+  'Generate vendor leads', 'Attract qualified buyers', 'Build personal brand',
+  'Promote active listings', 'Grow social following', 'Build referral network',
+];
+
+const CONTENT_TOPICS_AGENT = [
   'Market trends & data', 'Buyer tips', 'Seller preparation', 'Investment insights',
   'Success stories', 'Local area guides', 'Property styling', 'Finance & mortgages',
   'First home buyers', 'Commercial property', 'Auction tips', 'Behind the scenes',
+];
+
+const CONTENT_TOPICS_BROKER = [
+  'Market trends & data', 'Buyer tips', 'Business valuation', 'Exit planning',
+  'Success stories', 'Due diligence tips', 'Franchise opportunities', 'Buyer financing',
+  'Industry sector insights', 'Vendor preparation', 'Confidentiality in sales', 'Behind the scenes',
 ];
 
 const CONTENT_FORMATS = [
@@ -70,11 +95,19 @@ export default function MarketingPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { isBroker } = useUserType();
+
   // Global preferences
   const [includeEmojis, setIncludeEmojis] = useState(true);
   const [tone, setTone] = useState<'professional' | 'casual'>('professional');
   const [styleInstructions, setStyleInstructions] = useState('');
   const [userType, setUserType] = useState<string | null>(null);
+
+  // Role-aware arrays
+  const GOAL_TYPES = isBroker ? GOAL_TYPES_BROKER : GOAL_TYPES_AGENT;
+  const CTA_OPTIONS = isBroker ? CTA_OPTIONS_BROKER : CTA_OPTIONS_AGENT;
+  const PLAN_GOALS = isBroker ? PLAN_GOALS_BROKER : PLAN_GOALS_AGENT;
+  const CONTENT_TOPICS = isBroker ? CONTENT_TOPICS_BROKER : CONTENT_TOPICS_AGENT;
 
   // Post builder state
   const [selectedGoal, setSelectedGoal] = useState('');
@@ -306,7 +339,7 @@ export default function MarketingPage() {
           </div>
           <div className="flex items-start gap-2 w-full sm:w-auto sm:flex-1">
             <Textarea
-              placeholder="e.g. Always use our brand name 'Elite Realty'. Keep sentences under 15 words. Reference NZ market trends."
+              placeholder={isBroker ? "e.g. Always use our brand name 'Elite Business Sales'. Keep sentences under 15 words. Reference NZ market trends." : "e.g. Always use our brand name 'Elite Realty'. Keep sentences under 15 words. Reference NZ market trends."}
               value={styleInstructions}
               onChange={e => setStyleInstructions(e.target.value)}
               className="min-h-[36px] h-9 text-xs resize-none"
@@ -338,13 +371,13 @@ export default function MarketingPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Listing Name (optional)</Label>
-                  <Input placeholder="e.g. 3-bed Villa — Ponsonby" value={listingName} onChange={e => setListingName(e.target.value)} />
+                  <Input placeholder={isBroker ? "e.g. $300K profit Restaurant — Ponsonby" : "e.g. 3-bed Villa — Ponsonby"} value={listingName} onChange={e => setListingName(e.target.value)} />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Listing URL (optional)</Label>
-                  <Input placeholder="https://www.realestate.co.nz/..." value={listingUrl} onChange={e => setListingUrl(e.target.value)} />
-                  <p className="text-xs text-muted-foreground">Paste a listing link and the AI will extract property details automatically</p>
+                  <Input placeholder={isBroker ? "https://www.nzbizbuysell.co.nz/..." : "https://www.realestate.co.nz/..."} value={listingUrl} onChange={e => setListingUrl(e.target.value)} />
+                  <p className="text-xs text-muted-foreground">Paste a listing link and the AI will extract {isBroker ? 'business' : 'property'} details automatically</p>
                 </div>
 
                 <div className="space-y-2">
@@ -426,7 +459,7 @@ export default function MarketingPage() {
                         <Badge variant="secondary">{post.platform}</Badge>
                         {post.propertyDetails && (
                           <div className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                            <span className="font-semibold">Property Details:</span> {post.propertyDetails}
+                            <span className="font-semibold">{isBroker ? 'Business Details:' : 'Property Details:'}</span> {post.propertyDetails}
                           </div>
                         )}
                         <div className="space-y-3 text-sm">
@@ -593,7 +626,7 @@ export default function MarketingPage() {
 
                 <div className="space-y-2">
                   <Label>Custom Topic (optional)</Label>
-                  <Input placeholder="e.g. Downsizing tips for retirees" value={customTopic} onChange={e => setCustomTopic(e.target.value)} />
+                  <Input placeholder={isBroker ? "e.g. How to value a cafe business" : "e.g. Downsizing tips for retirees"} value={customTopic} onChange={e => setCustomTopic(e.target.value)} />
                 </div>
 
                 <Button onClick={handleGenerateContentIdeas} disabled={generatingContent} className="w-full sm:w-auto">

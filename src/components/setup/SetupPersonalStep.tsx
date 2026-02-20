@@ -18,9 +18,11 @@ interface Props {
   onChange: (data: PersonalData) => void;
   onNext: () => void;
   onBack: () => void;
+  userType?: string | null;
 }
 
-export function SetupPersonalStep({ data, onChange, onNext, onBack }: Props) {
+export function SetupPersonalStep({ data, onChange, onNext, onBack, userType }: Props) {
+  const isBroker = userType === 'business_broker';
   return (
     <Card className="shadow-card animate-slide-up">
       <CardHeader>
@@ -81,7 +83,7 @@ export function SetupPersonalStep({ data, onChange, onNext, onBack }: Props) {
             <Label htmlFor="companyName" className="text-xs">Company Name <span className="text-muted-foreground">(optional)</span></Label>
             <Input
               id="companyName"
-              placeholder="ABC Business Sales"
+              placeholder={isBroker ? "ABC Business Sales" : "Harcourts Real Estate"}
               value={data.companyName}
               onChange={(e) => onChange({ ...data, companyName: e.target.value })}
             />
@@ -90,7 +92,7 @@ export function SetupPersonalStep({ data, onChange, onNext, onBack }: Props) {
             <Label htmlFor="title" className="text-xs">Title <span className="text-muted-foreground">(optional)</span></Label>
             <Input
               id="title"
-              placeholder="Senior Broker"
+              placeholder={isBroker ? "Senior Broker" : "Sales Consultant"}
               value={data.title}
               onChange={(e) => onChange({ ...data, title: e.target.value })}
             />

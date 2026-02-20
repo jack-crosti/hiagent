@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserType } from '@/contexts/UserTypeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
@@ -19,6 +20,7 @@ interface DealRow { listing_name: string | null; deal_type: string; net_to_user_
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { isBroker } = useUserType();
   const [stats, setStats] = useState({ totalIncome: 0, totalExpenses: 0, pendingGst: 0, dealsPipeline: 0, dealsCount: 0, isDemo: true });
   const [txns, setTxns] = useState<TxnRow[]>([]);
   const [deals, setDeals] = useState<DealRow[]>([]);
@@ -92,7 +94,7 @@ export default function Dashboard() {
                 <Button variant="outline" className="w-full justify-start"><Plus size={16} className="mr-2" /> Add Transaction</Button>
               </Link>
               <Link to="/personal-finance" className="block">
-                <Button variant="outline" className="w-full justify-start"><Target size={16} className="mr-2" /> Add New Listing</Button>
+                <Button variant="outline" className="w-full justify-start"><Target size={16} className="mr-2" /> {isBroker ? 'Add New Deal' : 'Add New Listing'}</Button>
               </Link>
               <Link to="/gst" className="block">
                 <Button variant="outline" className="w-full justify-start"><Receipt size={16} className="mr-2" /> Check GST Status</Button>
