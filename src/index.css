@@ -68,11 +68,11 @@
     --shadow-elevated: 0 8px 30px -6px hsl(250 30% 30% / 0.14);
 
     /* Sidebar — white */
-    --sidebar-background: 0 0% 100%;
+    --sidebar-background: 250 20% 90%;
     --sidebar-foreground: 240 20% 14%;
     --sidebar-primary: 255 55% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 250 20% 96%;
+    --sidebar-accent: 250 18% 86%;
     --sidebar-accent-foreground: 240 15% 30%;
     --sidebar-border: 250 10% 92%;
     --sidebar-ring: 255 55% 55%;
@@ -104,7 +104,7 @@
     --ring: 255 55% 62%;
     --shadow-card: 0 2px 20px -4px hsl(0 0% 0% / 0.3);
     --shadow-elevated: 0 8px 30px -6px hsl(0 0% 0% / 0.4);
-    --sidebar-background: 250 20% 5%;
+    --sidebar-background: 250 20% 8%;
     --sidebar-foreground: 250 10% 92%;
     --sidebar-primary: 255 55% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
