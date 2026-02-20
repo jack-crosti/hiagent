@@ -28,7 +28,7 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
       <div className="w-full max-w-lg space-y-6 animate-fade-in p-4">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
-            <span className="font-heading font-bold text-[7.5rem] leading-none text-white">
+            <span className="font-heading font-bold text-[12rem] leading-none text-white">
               Hi<span className="text-violet-500">Agent</span>
             </span>
           </div>
