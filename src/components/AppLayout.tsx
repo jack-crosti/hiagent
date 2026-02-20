@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +8,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { SetupBanner } from '@/components/SetupBanner';
 import { QuickSetup } from '@/components/QuickSetup';
 import { UserTypeSelector } from '@/components/UserTypeSelector';
+import { SplashScreen } from '@/components/SplashScreen';
 import { DemoBanner } from '@/components/DemoBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Search, Bell } from 'lucide-react';
@@ -40,7 +41,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
   const [userType, setUserType] = useState<string | null | undefined>(undefined);
   const [userName, setUserName] = useState<string>('');
+  const [showSplash, setShowSplash] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
 
+  const handleSplashComplete = useCallback(() => setSplashDone(true), []);
   useEffect(() => {
     if (!user) return;
     Promise.all([
@@ -77,6 +81,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   if (!user) return <Navigate to="/auth" replace />;
 
   if (!userType) {
+    if (!showSplash) {
+      // Trigger splash on first render when userType is null
+      return <SplashScreen onComplete={() => { setShowSplash(true); }} duration={3000} />;
+    }
     return <UserTypeSelector onComplete={() => { setUserType('set'); }} />;
   }
 
