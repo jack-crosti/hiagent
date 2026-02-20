@@ -7,17 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Palette, Globe, Save, Loader2, Check, Moon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTheme, getThemeFamily, THEME_FAMILIES, loadGoogleFont } from '@/contexts/ThemeContext';
+import { useTheme, getThemeFamily, THEME_FAMILIES } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
-
-const FONT_OPTIONS = [
-  'Plus Jakarta Sans', 'DM Sans', 'Inter', 'Manrope', 'Outfit',
-  'Satoshi', 'Space Grotesk', 'Sora', 'Nunito', 'Raleway',
-  'Lato', 'Open Sans', 'Montserrat', 'Rubik', 'Work Sans',
-];
 
 export default function CustomizationPage() {
   const { user } = useAuth();
@@ -32,19 +25,11 @@ export default function CustomizationPage() {
     primary_color: '#2A9D8F',
     secondary_color: '#E9C46A',
     accent_color: '#E76F51',
-    font_heading: 'Plus Jakarta Sans',
-    font_body: 'DM Sans',
     apply_to_ui: true,
     apply_to_exports: true,
   });
 
   const currentFamily = getThemeFamily(activeTheme);
-
-  // Load saved fonts on mount and when they change
-  useEffect(() => {
-    if (brand.font_heading) loadGoogleFont(brand.font_heading);
-    if (brand.font_body) loadGoogleFont(brand.font_body);
-  }, [brand.font_heading, brand.font_body]);
 
   useEffect(() => {
     if (!user) return;
@@ -56,8 +41,6 @@ export default function CustomizationPage() {
             primary_color: data.primary_color || '#2A9D8F',
             secondary_color: data.secondary_color || '#E9C46A',
             accent_color: data.accent_color || '#E76F51',
-            font_heading: data.font_heading || 'Plus Jakarta Sans',
-            font_body: data.font_body || 'DM Sans',
             apply_to_ui: data.apply_to_ui ?? true,
             apply_to_exports: data.apply_to_exports ?? true,
           });
@@ -73,9 +56,7 @@ export default function CustomizationPage() {
       const { data, error } = await supabase.functions.invoke('extract-brand-colors', {
         body: { url: websiteUrl.trim() },
       });
-
       if (error) throw error;
-
       if (data?.primary) {
         setBrand(b => ({
           ...b,
@@ -94,15 +75,6 @@ export default function CustomizationPage() {
     setImportingColors(false);
   }
 
-  function handleFontChange(key: 'font_heading' | 'font_body', value: string) {
-    loadGoogleFont(value);
-    setBrand(b => ({ ...b, [key]: value }));
-    // Apply immediately for preview
-    const root = document.documentElement;
-    if (key === 'font_heading') root.style.setProperty('--font-heading', `"${value}"`);
-    if (key === 'font_body') root.style.setProperty('--font-body', `"${value}"`);
-  }
-
   async function handleSave() {
     if (!user) return;
     setSaving(true);
@@ -110,12 +82,6 @@ export default function CustomizationPage() {
       owner_user_id: user.id,
       ...brand,
     }, { onConflict: 'owner_user_id' });
-
-    await supabase.from('profiles').update({
-      heading_font: brand.font_heading,
-      body_font: brand.font_body,
-    }).eq('owner_user_id', user.id);
-
     setSaving(false);
     refreshBrand();
     toast({ title: 'Brand settings saved' });
@@ -142,10 +108,10 @@ export default function CustomizationPage() {
               <Palette size={18} className="text-primary" />
               Theme
             </CardTitle>
-            <CardDescription>Choose a theme and toggle dark mode.</CardDescription>
+            <CardDescription>Choose a theme and toggle dark mode. Select "Brand Colors" to use your custom palette.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {THEME_FAMILIES.map(f => (
                 <button
                   key={f.id}
@@ -161,9 +127,9 @@ export default function CustomizationPage() {
                     </div>
                   )}
                   <div className="flex gap-1 mb-2">
-                    <div className="h-6 w-6 rounded-md border border-border" style={{ background: f.previewBg }} />
-                    <div className="h-6 w-6 rounded-md border border-border" style={{ background: f.previewSidebar }} />
-                    <div className="h-6 w-6 rounded-md border border-border" style={{ background: f.previewPrimary }} />
+                    <div className="h-6 w-6 rounded-md border border-border" style={{ background: f.id === 'brand' ? brand.primary_color : f.previewBg }} />
+                    <div className="h-6 w-6 rounded-md border border-border" style={{ background: f.id === 'brand' ? '#2A2A2A' : f.previewSidebar }} />
+                    <div className="h-6 w-6 rounded-md border border-border" style={{ background: f.id === 'brand' ? brand.accent_color : f.previewPrimary }} />
                   </div>
                   <p className="text-sm font-medium">{f.name}</p>
                   <p className="text-[10px] text-muted-foreground">{f.description}</p>
@@ -188,7 +154,7 @@ export default function CustomizationPage() {
               <Palette size={18} className="text-primary" />
               Brand Colors
             </CardTitle>
-            <CardDescription>These colors apply to the app UI and exported reports.</CardDescription>
+            <CardDescription>Set your brand colors. Select the "Brand Colors" theme above to apply them to the UI.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
@@ -238,67 +204,12 @@ export default function CustomizationPage() {
           </CardContent>
         </Card>
 
-        {/* Fonts */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="text-lg font-heading">Typography</CardTitle>
-            <CardDescription>Choose fonts for headings and body text.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Heading Font</Label>
-                <Select value={brand.font_heading} onValueChange={(v) => handleFontChange('font_heading', v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FONT_OPTIONS.map(font => (
-                      <SelectItem key={font} value={font}>
-                        <span style={{ fontFamily: font }}>{font}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground" style={{ fontFamily: brand.font_heading }}>
-                  Preview: The quick brown fox
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Body Font</Label>
-                <Select value={brand.font_body} onValueChange={(v) => handleFontChange('font_body', v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FONT_OPTIONS.map(font => (
-                      <SelectItem key={font} value={font}>
-                        <span style={{ fontFamily: font }}>{font}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground" style={{ fontFamily: brand.font_body }}>
-                  Preview: The quick brown fox
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Apply settings */}
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="text-lg font-heading">Apply Branding</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Apply to app UI</p>
-                <p className="text-xs text-muted-foreground">Theme the sidebar, buttons, and accents</p>
-              </div>
-              <Switch checked={brand.apply_to_ui} onCheckedChange={v => setBrand(b => ({ ...b, apply_to_ui: v }))} />
-            </div>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Apply to PDF exports</p>

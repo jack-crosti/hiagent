@@ -25,6 +25,7 @@ export const THEME_FAMILIES: ThemeFamily[] = [
   { id: 'lavender', name: 'Lavender', description: 'Soft purple with lavender accents', previewBg: '#ECEAF4', previewSidebar: '#D8D4E8', previewPrimary: '#7C5CFC' },
   { id: 'ocean', name: 'Ocean', description: 'Cool blue with navy sidebar', previewBg: '#E5EAF0', previewSidebar: '#1C2A3A', previewPrimary: '#2E7DD6' },
   { id: 'sunset', name: 'Sunset', description: 'Warm tones with dark sidebar', previewBg: '#F0E6DC', previewSidebar: '#2E2218', previewPrimary: '#D95030' },
+  { id: 'brand', name: 'Brand Colors', description: 'Your custom brand palette', previewBg: '#F5F5F5', previewSidebar: '#2A2A2A', previewPrimary: '#2A9D8F' },
 ];
 
 export const THEMES: ThemeDefinition[] = [
@@ -180,16 +181,68 @@ export function loadGoogleFont(fontName: string) {
 }
 
 export function getThemeFamily(themeId: string): string {
-  return THEMES.find(t => t.id === themeId)?.family ?? 'lavender';
+  const staticMatch = THEMES.find(t => t.id === themeId)?.family;
+  if (staticMatch) return staticMatch;
+  // Handle dynamic brand themes
+  if (themeId === 'brand' || themeId === 'dark-brand') return 'brand';
+  return 'lavender';
 }
 
-interface BrandColors {
+export interface BrandColors {
   primary_color: string | null;
   secondary_color: string | null;
   accent_color: string | null;
   apply_to_ui: boolean;
   font_heading: string | null;
   font_body: string | null;
+}
+
+/** Build a brand-based theme from user's brand colors */
+function buildBrandTheme(brand: BrandColors, dark: boolean): ThemeDefinition {
+  const primaryHsl = brand.primary_color ? hexToHsl(brand.primary_color) : '170 50% 40%';
+  const accentHsl = brand.accent_color ? hexToHsl(brand.accent_color) : '15 75% 55%';
+  const secondaryHsl = brand.secondary_color ? hexToHsl(brand.secondary_color) : '42 80% 50%';
+
+  if (dark) {
+    return {
+      id: 'dark-brand', name: 'Dark Brand', description: 'Brand colors in dark mode',
+      family: 'brand', dark: true, pairId: 'brand',
+      vars: {
+        '--primary': primaryHsl, '--primary-foreground': '0 0% 5%',
+        '--accent': accentHsl, '--accent-foreground': '0 0% 5%',
+        '--secondary': '0 0% 15%', '--secondary-foreground': '0 0% 90%',
+        '--background': '0 0% 7%', '--foreground': '0 0% 92%',
+        '--card': '0 0% 10%', '--card-foreground': '0 0% 92%',
+        '--popover': '0 0% 10%', '--popover-foreground': '0 0% 92%',
+        '--muted': '0 0% 14%', '--muted-foreground': '0 0% 58%',
+        '--destructive': '0 62% 40%', '--destructive-foreground': '0 0% 95%',
+        '--border': '0 0% 18%', '--input': '0 0% 18%',
+        '--sidebar-background': '0 0% 5%', '--sidebar-accent': '0 0% 10%',
+        '--sidebar-foreground': '0 0% 90%',
+        '--chart-1': primaryHsl, '--chart-2': accentHsl,
+        '--chart-3': secondaryHsl, '--chart-4': '340 60% 60%', '--chart-5': '152 55% 50%',
+      },
+    };
+  }
+  return {
+    id: 'brand', name: 'Brand Colors', description: 'Your custom brand palette',
+    family: 'brand', pairId: 'dark-brand',
+    vars: {
+      '--primary': primaryHsl, '--primary-foreground': '0 0% 100%',
+      '--accent': accentHsl, '--accent-foreground': '0 0% 100%',
+      '--secondary': '0 0% 95%', '--secondary-foreground': '0 0% 14%',
+      '--background': '0 0% 96%', '--foreground': '0 0% 14%',
+      '--card': '0 0% 100%', '--card-foreground': '0 0% 14%',
+      '--popover': '0 0% 100%', '--popover-foreground': '0 0% 14%',
+      '--muted': '0 0% 92%', '--muted-foreground': '0 0% 42%',
+      '--destructive': '0 72% 51%', '--destructive-foreground': '0 0% 100%',
+      '--border': '0 0% 88%', '--input': '0 0% 88%',
+      '--sidebar-background': '0 0% 12%', '--sidebar-accent': '0 0% 17%',
+      '--sidebar-foreground': '0 0% 92%',
+      '--chart-1': primaryHsl, '--chart-2': accentHsl,
+      '--chart-3': secondaryHsl, '--chart-4': '340 60% 55%', '--chart-5': '152 56% 42%',
+    },
+  };
 }
 
 interface ThemeContextType {
@@ -238,7 +291,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     loadBrand();
   }, [user]);
 
-  const currentTheme = THEMES.find(t => t.id === activeTheme);
+  // Build dynamic themes list including brand theme
+  const allThemes = [...THEMES];
+  if (brandColors) {
+    allThemes.push(buildBrandTheme(brandColors, false));
+    allThemes.push(buildBrandTheme(brandColors, true));
+  }
+
+  const currentTheme = allThemes.find(t => t.id === activeTheme);
   const isDark = currentTheme?.dark ?? false;
 
   // Apply theme CSS vars
@@ -258,18 +318,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--sidebar-accent-foreground', currentTheme.vars['--sidebar-foreground'] || currentTheme.vars['--foreground']);
     root.style.setProperty('--sidebar-border', currentTheme.vars['--border']);
   }, [activeTheme, currentTheme]);
-
-  // Apply brand color overrides
-  useEffect(() => {
-    if (!brandColors?.apply_to_ui) return;
-    const root = document.documentElement;
-    if (brandColors.primary_color) {
-      const hsl = hexToHsl(brandColors.primary_color);
-      if (hsl) { root.style.setProperty('--primary', hsl); root.style.setProperty('--ring', hsl); root.style.setProperty('--sidebar-primary', hsl); root.style.setProperty('--sidebar-ring', hsl); }
-    }
-    if (brandColors.accent_color) { const hsl = hexToHsl(brandColors.accent_color); if (hsl) root.style.setProperty('--accent', hsl); }
-    if (brandColors.secondary_color) { const hsl = hexToHsl(brandColors.secondary_color); if (hsl) root.style.setProperty('--secondary', hsl); }
-  }, [brandColors, activeTheme]);
 
   // Apply brand fonts
   useEffect(() => {
@@ -295,13 +343,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   /** Set theme by family name - picks light or dark variant based on current isDark state */
   function setTheme(familyId: string) {
     const wantDark = isDark;
-    const match = THEMES.find(t => t.family === familyId && (wantDark ? t.dark : !t.dark));
+    const match = allThemes.find(t => t.family === familyId && (wantDark ? t.dark : !t.dark));
     if (match) persistTheme(match.id);
   }
 
   function toggleDarkMode() {
     const family = getThemeFamily(activeTheme);
-    const pair = THEMES.find(t => t.family === family && (isDark ? !t.dark : t.dark));
+    const pair = allThemes.find(t => t.family === family && (isDark ? !t.dark : t.dark));
     if (pair) persistTheme(pair.id);
   }
 
