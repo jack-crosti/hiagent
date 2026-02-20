@@ -150,7 +150,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
               Hi
             </div>
           </div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Welcome to HiAgent</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Welcome to {userType === 'business_broker' ? 'HiBroker' : 'HiAgent'}</h1>
           <p className="text-muted-foreground text-sm">Let's personalise your experience</p>
 
           <div className="flex justify-center gap-1.5 pt-2">
@@ -165,7 +165,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
 
         {step === 0 && <SetupCommissionStep data={commission} onChange={setCommission} onNext={() => setStep(1)} userType={userType} />}
         {step === 1 && <SetupGoalStep data={goal} onChange={setGoal} onNext={() => setStep(2)} onBack={() => setStep(0)} />}
-        {step === 2 && <SetupPersonalStep data={personal} onChange={setPersonal} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+        {step === 2 && <SetupPersonalStep data={personal} onChange={setPersonal} onNext={() => setStep(3)} onBack={() => setStep(1)} userType={userType} />}
         {step === 3 && (
           <SetupLogoStep
             logos={logos}

@@ -10,6 +10,7 @@ import { QuickSetup } from '@/components/QuickSetup';
 import { UserTypeSelector } from '@/components/UserTypeSelector';
 import { DemoBanner } from '@/components/DemoBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { UserTypeProvider } from '@/contexts/UserTypeContext';
 
 /**
  * Checks whether the user's required settings are complete.
@@ -88,16 +89,18 @@ export function AppLayout({ children }: {children: ReactNode;}) {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      {!isMobile && <AppSidebar />}
-      <main className="flex-1 flex flex-col min-h-screen">
-        
-        <SetupBanner />
-        <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
-          {children}
-        </div>
-      </main>
-      {isMobile && <BottomNav />}
-    </div>);
+    <UserTypeProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        {!isMobile && <AppSidebar userType={userType as string | null} />}
+        <main className="flex-1 flex flex-col min-h-screen">
+          
+          <SetupBanner />
+          <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
+            {children}
+          </div>
+        </main>
+        {isMobile && <BottomNav />}
+      </div>
+    </UserTypeProvider>);
 
 }
