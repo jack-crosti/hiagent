@@ -58,7 +58,7 @@ export default function Dashboard() {
         action={
           <div className="flex items-center gap-3">
             {logoUrl && (
-              <img src={logoUrl} alt="Logo" className="h-8 w-auto object-contain rounded" />
+              <img src={logoUrl} alt="Logo" className="h-8 w-auto object-contain rounded-xl" />
             )}
             <Link to="/personal-finance">
               <Button size="sm"><Target size={16} className="mr-1.5" />View Goals</Button>
@@ -67,43 +67,47 @@ export default function Dashboard() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <StatCard title="Total Income" value={formatNZD(stats.totalIncome)} icon={<DollarSign size={20} />}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <StatCard title="Total Income" value={formatNZD(stats.totalIncome)} icon={<DollarSign size={22} />}
           trend={stats.totalIncome > 0 ? { value: 'This period', positive: true } : undefined} />
-        <StatCard title="Total Expenses" value={formatNZD(stats.totalExpenses)} icon={<ArrowRightLeft size={20} />} />
-        <StatCard title="Pending GST" value={formatNZD(stats.pendingGst)} icon={<Receipt size={20} />} subtitle="Current period" />
-        <StatCard title="Pipeline Value" value={formatNZD(stats.dealsPipeline)} icon={<TrendingUp size={20} />}
+        <StatCard title="Total Expenses" value={formatNZD(stats.totalExpenses)} icon={<ArrowRightLeft size={22} />} />
+        <StatCard title="Pending GST" value={formatNZD(stats.pendingGst)} icon={<Receipt size={22} />} subtitle="Current period" />
+        <StatCard title="Pipeline Value" value={formatNZD(stats.dealsPipeline)} icon={<TrendingUp size={22} />}
           subtitle={`${stats.dealsCount} active deals`} />
       </div>
 
-      {/* Charts */}
+      {/* Charts — bento grid */}
       {!stats.isDemo && (
-        <div className="grid gap-4 md:grid-cols-2 mb-6">
-          <IncomeExpenseChart transactions={txns} />
+        <div className="grid gap-6 lg:grid-cols-3 mb-8">
+          <div className="lg:col-span-2">
+            <IncomeExpenseChart transactions={txns} />
+          </div>
           <PipelineChart deals={deals} />
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="shadow-card">
-          <CardHeader><CardTitle className="text-lg font-heading">Quick Actions</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            <Link to="/transactions" className="block">
-              <Button variant="outline" className="w-full justify-start"><Plus size={16} className="mr-2" /> Add Transaction</Button>
-            </Link>
-            <Link to="/personal-finance" className="block">
-              <Button variant="outline" className="w-full justify-start"><Target size={16} className="mr-2" /> Add New Listing</Button>
-            </Link>
-            <Link to="/gst" className="block">
-              <Button variant="outline" className="w-full justify-start"><Receipt size={16} className="mr-2" /> Check GST Status</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader><CardTitle className="text-lg font-heading">Quick Actions</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <Link to="/transactions" className="block">
+                <Button variant="outline" className="w-full justify-start"><Plus size={16} className="mr-2" /> Add Transaction</Button>
+              </Link>
+              <Link to="/personal-finance" className="block">
+                <Button variant="outline" className="w-full justify-start"><Target size={16} className="mr-2" /> Add New Listing</Button>
+              </Link>
+              <Link to="/gst" className="block">
+                <Button variant="outline" className="w-full justify-start"><Receipt size={16} className="mr-2" /> Check GST Status</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
 
         {stats.isDemo && <DemoModeCard userId={user?.id ?? ''} onComplete={loadStats} />}
 
         {!stats.isDemo && (
-          <Card className="shadow-card">
+          <Card>
             <CardHeader><CardTitle className="text-lg font-heading">Recent Activity</CardTitle></CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">Your recent transactions and deals will appear here.</p>
