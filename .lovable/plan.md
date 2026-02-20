@@ -1,42 +1,57 @@
 
 
-# Embed Master Writing Prompts into Marketing AI
+# Add Listing URL + Multi-Platform Post Generation
 
 ## Overview
 
-Integrate your two master prompts (one for Real Estate Agents, one for Business Brokers) into the backend so the AI always follows the correct style guide based on the user's role. The frontend will pass the user's role to the edge function, which selects the appropriate master prompt automatically.
+Two changes to the Post Builder:
+1. Add a "Listing URL" input field so users can paste a link for the AI to reference
+2. When multiple platforms are selected, generate a separate post for each platform instead of one generic post
 
 ## Changes
 
-### 1. Frontend: Pass user type to the edge function (`src/pages/Marketing.tsx`)
+### 1. Frontend: Add Listing URL field (`src/pages/Marketing.tsx`)
 
-- Fetch the user's `user_type` from the `profiles` table on mount (same pattern used in other pages)
-- Include `userType` in every `callMarketingAI` call so the backend knows which master prompt to use
-- The "Writing Style Instructions" textarea remains for additional per-request customization on top of the master prompt
+- Add new state: `listingUrl` (string)
+- Add an `Input` field after the "Listing Name" input, labeled "Listing URL (optional)" with placeholder like "https://www.realestate.co.nz/..."
+- Pass `listingUrl` to the `callMarketingAI` call
 
-### 2. Backend: Embed both master prompts (`supabase/functions/marketing-ai/index.ts`)
+### 2. Frontend: Generate one post per platform (`src/pages/Marketing.tsx`)
 
-- Add two large constant strings: `MASTER_PROMPT_REAL_ESTATE` and `MASTER_PROMPT_BUSINESS_BROKER`
-- Each contains the full style requirements, platform rules, goal-type adaptation rules, and output format you provided
-- At the start of each action handler (`generate_post`, `generate_plan`, `generate_content_ideas`), prepend the appropriate master prompt to the system prompt based on `params.userType`
-- If no user type is provided, default to the Real Estate Agent prompt
-- The existing emoji toggle, tone toggle, and style instructions continue to be appended after the master prompt
+- Change `generatedPost` state from a single object to an array: `generatedPosts: any[]`
+- In `handleGeneratePost`, loop through `selectedPlatforms` and call the AI once per platform (sequentially to avoid rate limits), passing a single platform each time
+- Update the output card to render a list of posts, each with its platform badge, content sections, and a copy button
+- Update `handleCopy` to accept an index parameter
 
-### 3. What stays the same
+### 3. Backend: Use listing URL in the prompt (`supabase/functions/marketing-ai/index.ts`)
 
-- All existing UI controls (goal type, style, CTA, platforms, emoji toggle, tone toggle, writing style textarea) remain unchanged
-- The JSON output format instructions remain in each action's system prompt
-- The robust JSON parsing logic stays as-is
+- In the `generate_post` action, if `listingUrl` is provided, add it to the user prompt: `Listing URL: ${listingUrl}` so the AI can reference or include it in the CTA
+- No other backend changes needed -- the multi-platform logic is handled by the frontend making separate calls per platform
 
 ## Technical Details
 
-**Frontend (`Marketing.tsx`):**
-- Add `userType` state, fetched from `profiles` table on mount
-- In `callMarketingAI`, add `userType` to the params object
+**New state in Marketing.tsx:**
+```
+const [listingUrl, setListingUrl] = useState('');
+const [generatedPosts, setGeneratedPosts] = useState<any[]>([]);
+```
 
-**Edge function (`marketing-ai/index.ts`):**
-- Two new constants at the top of the file containing the full master prompts
-- Selection logic: `const masterPrompt = params.userType === 'business_broker' ? MASTER_PROMPT_BUSINESS_BROKER : MASTER_PROMPT_REAL_ESTATE;`
-- Each action's system prompt becomes: `masterPrompt + actionSpecificInstructions + styleAppend`
+**handleGeneratePost loop:**
+```
+const posts = [];
+for (const platform of selectedPlatforms) {
+  const result = await callMarketingAI('generate_post', {
+    goal, style, cta, platforms: [platform], listingName, listingUrl,
+  });
+  posts.push({ ...result, platform });
+}
+setGeneratedPosts(posts);
+```
 
-The master prompts encode all the rules you specified: platform-specific formatting (LinkedIn professional, TikTok script format, etc.), goal-type adaptation, style requirements (no em dashes, no cliches, no AI filler), and output format (Hook, Body, CTA, Hashtags, optional video script).
+**Edge function user prompt update (line 124-128):**
+Add `listingUrl` to the destructured params and append to user prompt:
+```
+${listingUrl ? `Listing URL: ${listingUrl}` : ""}
+```
+
+**Output card:** Render `generatedPosts.map((post, i) => ...)` with each post showing its platform badge and copy button. Replace the single-post display.
