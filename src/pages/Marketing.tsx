@@ -73,6 +73,7 @@ export default function MarketingPage() {
   // Global preferences
   const [includeEmojis, setIncludeEmojis] = useState(true);
   const [tone, setTone] = useState<'professional' | 'casual'>('professional');
+  const [styleInstructions, setStyleInstructions] = useState('');
 
   // Post builder state
   const [selectedGoal, setSelectedGoal] = useState('');
@@ -120,7 +121,7 @@ export default function MarketingPage() {
 
   async function callMarketingAI(action: string, params: any) {
     const { data, error } = await supabase.functions.invoke('marketing-ai', {
-      body: { action, params: { ...params, includeEmojis, tone } },
+      body: { action, params: { ...params, includeEmojis, tone, styleInstructions: styleInstructions.trim() || undefined } },
     });
     if (error) throw new Error(error.message || 'AI request failed');
     if (data?.error) throw new Error(data.error);
@@ -238,7 +239,16 @@ export default function MarketingPage() {
                 className={cn('px-3 py-1 text-xs font-medium transition-colors',
                   tone === 'casual' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted')}
               >Casual</button>
-            </div>
+           </div>
+          </div>
+          <div className="flex items-start gap-2 w-full sm:w-auto sm:flex-1">
+            <Textarea
+              placeholder="e.g. Always use our brand name 'Elite Realty'. Keep sentences under 15 words. Reference NZ market trends."
+              value={styleInstructions}
+              onChange={e => setStyleInstructions(e.target.value)}
+              className="min-h-[36px] h-9 text-xs resize-none"
+              rows={1}
+            />
           </div>
         </CardContent>
       </Card>

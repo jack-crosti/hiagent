@@ -23,6 +23,10 @@ serve(async (req) => {
     let systemPrompt = "";
     let userPrompt = "";
 
+    const styleAppend = params.styleInstructions
+      ? `\n\nAdditional writing style instructions from the user: ${params.styleInstructions}`
+      : "";
+
     if (action === "generate_post") {
       const { goal, style, cta, platforms, listingName, includeEmojis, tone } = params;
       const emojiInstruction = includeEmojis ? "Use relevant emojis throughout to make it engaging." : "Do NOT use any emojis at all. Keep it clean and professional.";
@@ -30,8 +34,8 @@ serve(async (req) => {
 
       systemPrompt = `You are an expert social media copywriter for real estate agents and business brokers in New Zealand. Generate engaging social media posts. ${emojiInstruction} ${toneInstruction}
 
-Return your response as JSON with this exact structure:
-{"hook":"attention-grabbing opening line","body":"main copy 2-4 sentences","cta":"call to action line","hashtags":"5-8 relevant hashtags","imageIdea":"visual content suggestion","videoScript":"15-second video script if platform is TikTok/Instagram/YouTube, otherwise null"}`;
+Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exact structure:
+{"hook":"attention-grabbing opening line","body":"main copy 2-4 sentences","cta":"call to action line","hashtags":"5-8 relevant hashtags","imageIdea":"visual content suggestion","videoScript":"15-second video script if platform is TikTok/Instagram/YouTube, otherwise null"}${styleAppend}`;
 
       userPrompt = `Generate a ${style} social media post for ${platforms.join(", ")}.
 Goal: ${goal}
@@ -46,8 +50,8 @@ Keep it concise and platform-appropriate.`;
 
       systemPrompt = `You are a marketing strategist for real estate agents and business brokers in NZ. ${emojiInstruction} ${toneInstruction}
 
-Return your response as JSON with this exact structure:
-{"title":"plan title","summary":"brief overview","actions":[{"day":"day or week label","task":"specific action item","platform":"platform name","type":"content|outreach|networking|email","details":"extra context"}]}`;
+Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exact structure:
+{"title":"plan title","summary":"brief overview","actions":[{"day":"day or week label","task":"specific action item","platform":"platform name","type":"content|outreach|networking|email","details":"extra context"}]}${styleAppend}`;
 
       userPrompt = `Create a ${planType} marketing plan.
 Platform focus: ${platform}
@@ -62,8 +66,8 @@ Include 5-7 specific, actionable items.`;
 
       systemPrompt = `You are a content strategist for real estate agents and business brokers in NZ. ${emojiInstruction} ${toneInstruction}
 
-Return your response as JSON with this exact structure:
-{"ideas":[{"title":"content title","description":"2-3 sentence description","platforms":["platform1","platform2"],"format":"blog|video|carousel|infographic|story","difficulty":"easy|medium|advanced"}]}`;
+Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exact structure:
+{"ideas":[{"title":"content title","description":"2-3 sentence description","platforms":["platform1","platform2"],"format":"blog|video|carousel|infographic|story","difficulty":"easy|medium|advanced"}]}${styleAppend}`;
 
       userPrompt = `Generate 6 content ideas based on these topics: ${topics.join(", ")}${customTopic ? `, ${customTopic}` : ""}.
 Make them specific, actionable, and relevant to the NZ market.`;
@@ -81,27 +85,12 @@ Make them specific, actionable, and relevant to the NZ market.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.8,
-        tools: [{
-          type: "function",
-          function: {
-            name: "return_result",
-            description: "Return the structured result",
-            parameters: {
-              type: "object",
-              properties: {
-                result: { type: "object", description: "The structured JSON result" }
-              },
-              required: ["result"],
-              additionalProperties: false
-            }
-          }
-        }],
-        tool_choice: { type: "function", function: { name: "return_result" } },
       }),
     });
 
@@ -124,32 +113,33 @@ Make them specific, actionable, and relevant to the NZ market.`;
     }
 
     const data = await response.json();
-    
-    // Try tool_call first, then fall back to content parsing
-    let result;
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall) {
-      try {
-        const args = JSON.parse(toolCall.function.arguments);
-        result = args.result;
-      } catch {
-        result = null;
+    const content = data.choices?.[0]?.message?.content ?? "";
+    console.log("AI raw content:", content.substring(0, 500));
+
+    let result = null;
+    try {
+      const cleaned = content.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[0]);
       }
-    }
-    
-    if (!result) {
-      // Fallback: parse from content
-      const content = data.choices?.[0]?.message?.content ?? "";
+    } catch (e) {
+      console.error("JSON parse failed:", e);
+      // Try repair: strip trailing commas and control chars
       try {
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+        const repaired = content
+          .replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim()
+          .replace(/,\s*}/g, "}").replace(/,\s*]/g, "]")
+          .replace(/[\x00-\x1F\x7F]/g, "");
+        const jsonMatch2 = repaired.match(/\{[\s\S]*\}/);
+        if (jsonMatch2) result = JSON.parse(jsonMatch2[0]);
       } catch {
-        result = null;
+        // give up
       }
     }
 
     if (!result) {
-      return new Response(JSON.stringify({ error: "Failed to parse AI response" }), {
+      return new Response(JSON.stringify({ error: `Failed to parse AI response. Raw: ${content.substring(0, 200)}` }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
