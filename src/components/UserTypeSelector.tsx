@@ -29,7 +29,7 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <span className="font-heading font-bold text-[12rem] leading-none text-white">
-              Hi<span className="text-violet-500">Agent</span>
+              Hi<span className="aurora-text">Agent</span>
             </span>
           </div>
           <h1 className="font-heading text-2xl font-bold text-white pt-6">What best describes you?</h1>
