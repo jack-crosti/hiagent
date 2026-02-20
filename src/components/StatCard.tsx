@@ -12,7 +12,7 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle, icon, trend, className }: StatCardProps) {
   return (
-    <div className={cn("group rounded-2xl border border-border/50 bg-gradient-to-br from-card to-card/80 p-5 transition-all duration-200 hover:-translate-y-0.5 shadow-float opacity-75",
+    <div className={cn("group border border-border/50 bg-gradient-to-br from-card to-card/80 p-5 transition-all duration-200 hover:-translate-y-0.5 shadow-float opacity-90 rounded-3xl",
 
     className
     )}>
