@@ -91,7 +91,7 @@ export function AppLayout({ children }: {children: ReactNode;}) {
     <div className="flex min-h-screen w-full bg-background">
       {!isMobile && <AppSidebar />}
       <main className="flex-1 flex flex-col min-h-screen">
-        <DemoBanner className="text-8xl font-sans my-0 mx-0 text-center pt-[33px] pb-0 py-0" />
+        <DemoBanner className="text-7xl" />
         <SetupBanner />
         <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
           {children}
