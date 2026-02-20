@@ -47,16 +47,16 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-in-out sticky top-0 h-screen',
-        collapsed ? 'w-16' : 'w-60'
+        'flex flex-col border-r border-sidebar-border/40 bg-sidebar transition-[width] duration-300 ease-in-out sticky top-0 h-screen',
+        collapsed ? 'w-16' : 'w-64'
       )}>
 
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-5">
+      <div className="flex items-center gap-3 px-5 py-6">
         {logoUrl ?
-        <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-lg object-contain shrink-0" /> :
+        <img src={logoUrl} alt="Logo" className="h-9 w-9 rounded-xl object-contain shrink-0" /> :
 
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm shrink-0">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-heading font-bold text-sm shrink-0">
             Hi
           </div>
         }
@@ -67,10 +67,10 @@ export function AppSidebar() {
         }
       </div>
 
-      <Separator className="mb-2" />
+      <Separator className="mb-3 opacity-50" />
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-1">
         {navItems.map((item) => {
           const isActive = item.to === '/' ?
           location.pathname === '/' :
@@ -80,28 +80,28 @@ export function AppSidebar() {
               key={item.to}
               to={item.to}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200',
                 isActive ?
-                'bg-primary text-primary-foreground shadow-sm' :
-                'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
+                'bg-primary text-primary-foreground shadow-md' :
+                'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}>
 
-              <item.icon className="h-4.5 w-4.5 shrink-0" size={18} />
+              <item.icon className="shrink-0" size={18} />
               {!collapsed && <span className="truncate">{item.label}</span>}
             </RouterNavLink>);
 
         })}
       </nav>
 
-      <Separator className="mt-2" />
+      <Separator className="mt-2 opacity-50" />
 
       {/* Dark mode toggle */}
       {!collapsed &&
-      <div className="px-3 py-2">
+      <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Moon size={14} className="text-sidebar-foreground/50" />
-              <span className="text-xs font-medium text-sidebar-foreground/50">Dark mode</span>
+              <Moon size={14} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Dark mode</span>
             </div>
             <Switch checked={isDark} onCheckedChange={toggleDarkMode} className="scale-90" />
           </div>
@@ -109,14 +109,14 @@ export function AppSidebar() {
       }
 
       {/* Footer */}
-      <div className="p-2 space-y-1">
+      <div className="p-3 space-y-1">
         <button
           onClick={isDemoMode ? exitDemo : enterDemo}
           className={cn(
-            'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            'flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200',
             isDemoMode ?
             'bg-accent/10 text-accent' :
-            'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+            'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}>
 
           <Eye size={16} className="shrink-0" />
@@ -125,7 +125,7 @@ export function AppSidebar() {
 
         <button
           onClick={signOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-destructive transition-colors">
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-destructive transition-all duration-200">
 
           <LogOut size={18} className="shrink-0" />
           {!collapsed && <span>Sign Out</span>}

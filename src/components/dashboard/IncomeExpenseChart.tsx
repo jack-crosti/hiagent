@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Transaction {
@@ -30,32 +30,32 @@ export function IncomeExpenseChart({ transactions }: { transactions: Transaction
   if (data.length === 0) return null;
 
   return (
-    <Card className="shadow-card">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg font-heading">Income vs Expenses</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-64">
+        <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} stroke="hsl(var(--border))" />
-              <YAxis tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} stroke="hsl(var(--border))" />
+            <BarChart data={data} barGap={8} barSize={28}>
+              <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
               <Tooltip
                 formatter={(value: number) =>
                   new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 0 }).format(value)
                 }
                 contentStyle={{
-                  borderRadius: 8,
-                  border: '1px solid hsl(var(--border))',
+                  borderRadius: 12,
+                  border: 'none',
                   background: 'hsl(var(--card))',
                   color: 'hsl(var(--card-foreground))',
+                  boxShadow: '0 4px 20px -4px rgba(0,0,0,0.1)',
                 }}
                 labelStyle={{ color: 'hsl(var(--card-foreground))' }}
               />
               <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
-              <Bar dataKey="income" name="Income" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expenses" name="Expenses" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="income" name="Income" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="expenses" name="Expenses" fill="hsl(var(--muted))" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

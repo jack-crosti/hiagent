@@ -10,6 +10,7 @@ import { QuickSetup } from '@/components/QuickSetup';
 import { UserTypeSelector } from '@/components/UserTypeSelector';
 import { DemoBanner } from '@/components/DemoBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Search, Bell } from 'lucide-react';
 
 /**
  * Checks whether the user's required settings are complete.
@@ -18,16 +19,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 function isSetupIncomplete(profile: Record<string, unknown> | null, setupState: Record<string, unknown> | null): boolean {
   if (!profile) return true;
 
-  // Splits not set (still at exact default or null)
   const splitsNotSet =
     profile.business_sale_user_share == null ||
     profile.lease_user_share == null ||
     profile.property_sale_user_share == null;
 
-  // Withholding rate not set
   const whrNotSet = profile.withholding_rate == null;
 
-  // Logo not set and user hasn't explicitly skipped
   const logoSkipped = setupState?.skipped === true;
   const logoNotSet = !profile.avatar_url && !logoSkipped;
 
@@ -41,22 +39,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
   const [userType, setUserType] = useState<string | null | undefined>(undefined);
+  const [userName, setUserName] = useState<string>('');
 
   useEffect(() => {
     if (!user) return;
     Promise.all([
       supabase.from('setup_state').select('is_complete, skipped').eq('owner_user_id', user.id).maybeSingle(),
-      supabase.from('profiles').select('user_type, business_sale_user_share, lease_user_share, property_sale_user_share, withholding_rate, avatar_url, active_theme').eq('owner_user_id', user.id).maybeSingle(),
+      supabase.from('profiles').select('user_type, business_sale_user_share, lease_user_share, property_sale_user_share, withholding_rate, avatar_url, active_theme, first_name').eq('owner_user_id', user.id).maybeSingle(),
     ]).then(([setupRes, profileRes]) => {
       setUserType(profileRes.data?.user_type ?? null);
+      setUserName(profileRes.data?.first_name || user.email?.split('@')[0] || '');
 
-      // If setup is explicitly marked complete, honour that
       if (setupRes.data?.is_complete) {
         setSetupComplete(true);
         return;
       }
 
-      // Otherwise check if required settings are actually filled
       const incomplete = isSetupIncomplete(
         profileRes.data as Record<string, unknown> | null,
         setupRes.data as Record<string, unknown> | null
@@ -78,7 +76,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  // Show user type selector first if not set
   if (!userType) {
     return <UserTypeSelector onComplete={() => { setUserType('set'); }} />;
   }
@@ -91,9 +88,27 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen w-full bg-background">
       {!isMobile && <AppSidebar />}
       <main className="flex-1 flex flex-col min-h-screen">
+        {/* Top header bar */}
+        <div className="flex items-center justify-between px-6 py-4 shrink-0">
+          <div />
+          <div className="flex items-center gap-3">
+            <button className="p-2.5 rounded-xl hover:bg-card hover:shadow-card transition-all duration-200">
+              <Search size={18} className="text-muted-foreground" />
+            </button>
+            <button className="p-2.5 rounded-xl hover:bg-card hover:shadow-card transition-all duration-200 relative">
+              <Bell size={18} className="text-muted-foreground" />
+            </button>
+            <div className="flex items-center gap-2 pl-2">
+              <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-heading font-bold text-xs">
+                {userName.charAt(0).toUpperCase() || 'U'}
+              </div>
+              {!isMobile && <span className="text-sm font-medium text-foreground">{userName}</span>}
+            </div>
+          </div>
+        </div>
         <DemoBanner />
         <SetupBanner />
-        <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
+        <div key={location.pathname} className="flex-1 px-6 pb-20 md:pb-8 animate-page-enter">
           {children}
         </div>
       </main>
