@@ -13,8 +13,8 @@ interface StatCardProps {
 export function StatCard({ title, value, subtitle, icon, trend, className }: StatCardProps) {
   return (
     <div className={cn(
-      'group rounded-2xl border-0 bg-card p-6 shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1',
-      'before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100',
+      'group rounded-2xl border-0 border-b-2 border-white/20 bg-card p-6 shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-3',
+      'before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-primary/8 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100',
       'relative overflow-hidden',
       className
     )}>
@@ -33,7 +33,7 @@ export function StatCard({ title, value, subtitle, icon, trend, className }: Sta
           )}
         </div>
         {icon && (
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:bg-primary/15">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-[1.15] group-hover:shadow-md group-hover:bg-primary/15">
             {icon}
           </div>
         )}
