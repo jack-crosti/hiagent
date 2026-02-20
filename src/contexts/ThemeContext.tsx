@@ -23,8 +23,8 @@ export interface ThemeFamily {
 
 export const THEME_FAMILIES: ThemeFamily[] = [
   { id: 'lavender', name: 'Lavender', description: 'Soft purple with lavender accents', previewBg: '#ECEAF4', previewSidebar: '#D8D4E8', previewPrimary: '#7C5CFC' },
-  { id: 'ocean', name: 'Ocean', description: 'Cool blue with navy sidebar', previewBg: '#E5EAF0', previewSidebar: '#1C2A3A', previewPrimary: '#2E7DD6' },
-  { id: 'sunset', name: 'Sunset', description: 'Warm tones with dark sidebar', previewBg: '#F0E6DC', previewSidebar: '#2E2218', previewPrimary: '#D95030' },
+  { id: 'ocean', name: 'Ocean', description: 'Cool blue with navy sidebar', previewBg: '#C8D5E2', previewSidebar: '#1C2A3A', previewPrimary: '#2E7DD6' },
+  { id: 'sunset', name: 'Sunset', description: 'Warm tones with dark sidebar', previewBg: '#D9C4AB', previewSidebar: '#2E2218', previewPrimary: '#D95030' },
   { id: 'brand', name: 'Brand Colors', description: 'Your custom brand palette', previewBg: '#F5F5F5', previewSidebar: '#2A2A2A', previewPrimary: '#2A9D8F' },
 ];
 
@@ -75,11 +75,11 @@ export const THEMES: ThemeDefinition[] = [
     vars: {
       '--primary': '210 70% 50%', '--primary-foreground': '0 0% 100%',
       '--accent': '185 70% 45%', '--accent-foreground': '0 0% 100%',
-      '--secondary': '210 20% 93%', '--secondary-foreground': '210 25% 14%',
-      '--background': '210 20% 96%', '--foreground': '210 25% 14%',
+      '--secondary': '210 20% 85%', '--secondary-foreground': '210 25% 14%',
+      '--background': '210 25% 88%', '--foreground': '210 25% 14%',
       '--card': '0 0% 100%', '--card-foreground': '210 25% 14%',
       '--popover': '0 0% 100%', '--popover-foreground': '210 25% 14%',
-      '--muted': '210 15% 92%', '--muted-foreground': '210 10% 42%',
+      '--muted': '210 18% 83%', '--muted-foreground': '210 10% 42%',
       '--border': '210 12% 87%', '--input': '210 12% 87%',
       '--destructive': '0 72% 51%', '--destructive-foreground': '0 0% 100%',
       '--sidebar-background': '210 25% 15%', '--sidebar-accent': '210 22% 20%',
@@ -114,15 +114,15 @@ export const THEMES: ThemeDefinition[] = [
     vars: {
       '--primary': '15 75% 55%', '--primary-foreground': '0 0% 100%',
       '--accent': '42 80% 50%', '--accent-foreground': '0 0% 10%',
-      '--secondary': '25 25% 92%', '--secondary-foreground': '25 20% 14%',
-      '--background': '25 30% 96%', '--foreground': '25 20% 14%',
+      '--secondary': '25 28% 83%', '--secondary-foreground': '25 20% 14%',
+      '--background': '30 35% 86%', '--foreground': '25 20% 14%',
       '--card': '0 0% 100%', '--card-foreground': '25 20% 14%',
       '--popover': '0 0% 100%', '--popover-foreground': '25 20% 14%',
-      '--muted': '25 18% 91%', '--muted-foreground': '25 10% 42%',
+      '--muted': '25 25% 82%', '--muted-foreground': '25 10% 42%',
       '--border': '25 14% 86%', '--input': '25 14% 86%',
       '--destructive': '0 72% 51%', '--destructive-foreground': '0 0% 100%',
       '--sidebar-background': '25 20% 15%', '--sidebar-accent': '25 18% 20%',
-      '--sidebar-foreground': '25 15% 90%',
+      '--sidebar-foreground': '25 10% 95%',
       '--chart-1': '15 75% 55%', '--chart-2': '42 80% 50%',
       '--chart-3': '340 60% 55%', '--chart-4': '190 70% 50%', '--chart-5': '152 56% 42%',
     },

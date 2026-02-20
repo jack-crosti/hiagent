@@ -68,7 +68,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Loading HiAgent...</span>
+          <span className="text-sm text-muted-foreground">Loading...</span>
         </div>
       </div>
     );
@@ -86,14 +86,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full bg-gradient-to-br from-background via-background to-primary/5">
-      {!isMobile && <AppSidebar />}
+      {!isMobile && <AppSidebar userType={userType} />}
       <main className="flex-1 flex flex-col min-h-screen">
         {/* Top header bar */}
-        <div className="flex items-center justify-between px-6 py-4 shrink-0 relative">
-          <span className="font-heading font-bold text-2xl text-foreground absolute left-1/2 -translate-x-1/2">
-            Hi<span className="text-primary">Agent</span>
+        <div className="flex items-center justify-between px-6 py-4 shrink-0">
+          <span className="font-heading font-bold text-5xl text-foreground">
+            {userType === 'business_broker' ? 'Hi' : 'Hi'}<span className="text-primary">{userType === 'business_broker' ? 'Broker' : 'Agent'}</span>
           </span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             <button className="p-2.5 rounded-xl hover:bg-card hover:shadow-card transition-all duration-200">
               <Search size={18} className="text-muted-foreground" />
             </button>
