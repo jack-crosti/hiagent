@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard, ArrowRightLeft, BookOpen, Receipt,
   CreditCard, Brain, Zap, User, Megaphone, FileText,
-  Palette, Settings, LogOut, ChevronLeft, ChevronRight, Eye, Moon
+  Palette, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Eye, Moon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -30,7 +30,16 @@ const navItems = [
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export function AppSidebar() {
+function getAppName(userType: string | null | undefined): { prefix: string; suffix: string } {
+  if (userType === 'business_broker') return { prefix: 'Hi', suffix: 'Broker' };
+  return { prefix: 'Hi', suffix: 'Agent' };
+}
+
+interface AppSidebarProps {
+  userType?: string | null;
+}
+
+export function AppSidebar({ userType }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
   const { isDark, toggleDarkMode, activeTheme, setTheme } = useTheme();
@@ -39,6 +48,7 @@ export function AppSidebar() {
   const [firstName, setFirstName] = useState<string>('');
 
   const currentFamily = getThemeFamily(activeTheme);
+  const appName = getAppName(userType);
 
   useEffect(() => {
     if (!user) return;
@@ -52,13 +62,21 @@ export function AppSidebar() {
       collapsed ? 'w-16' : 'w-64'
     )}>
       {/* Brand */}
-      <div className="px-5 py-6">
-        <span className="font-heading font-bold text-3xl text-sidebar-foreground">
-          Hi<span className="text-primary">Agent</span>
-        </span>
-        {!collapsed && firstName && (
-          <p className="text-sm text-muted-foreground mt-1">Hi, {firstName}</p>
-        )}
+      <div className="px-5 py-6 flex items-start justify-between">
+        <div>
+          <span className="font-heading font-bold text-3xl text-sidebar-foreground">
+            {appName.prefix}<span className="text-primary">{appName.suffix}</span>
+          </span>
+          {!collapsed && firstName && (
+            <p className="text-sm text-muted-foreground mt-1">Hi, {firstName}</p>
+          )}
+        </div>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="p-1.5 rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+        >
+          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+        </button>
       </div>
 
       <Separator className="mb-3 opacity-50" />
@@ -142,9 +160,6 @@ export function AppSidebar() {
           <LogOut size={18} className="shrink-0" />
           {!collapsed && <span>Sign Out</span>}
         </button>
-        <Button variant="ghost" size="sm" onClick={() => setCollapsed(!collapsed)} className="w-full justify-center text-muted-foreground">
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </Button>
       </div>
     </aside>
   );
