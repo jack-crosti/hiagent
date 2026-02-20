@@ -36,7 +36,7 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
         "linear-gradient(135deg, #2d1b69 0%, #11998e 100%)",
       ]}
     >
-      <div className="w-full max-w-lg space-y-6 animate-fade-in p-4 flex flex-col items-center justify-center">
+      <div className="w-full max-w-lg space-y-6 animate-fade-in p-4">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-heading font-bold text-lg">
