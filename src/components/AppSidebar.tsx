@@ -8,7 +8,7 @@ import {
   CreditCard, Brain, Zap, User, Megaphone, FileText,
   Palette, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Eye, Moon
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -45,16 +45,9 @@ export function AppSidebar({ userType }: AppSidebarProps) {
   const { isDark, toggleDarkMode, activeTheme, setTheme } = useTheme();
   const { isDemoMode, enterDemo, exitDemo } = useDemo();
   const location = useLocation();
-  const [firstName, setFirstName] = useState<string>('');
 
   const currentFamily = getThemeFamily(activeTheme);
   const appName = getAppName(userType);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase.from('profiles').select('first_name').eq('owner_user_id', user.id).maybeSingle()
-      .then(({ data }) => setFirstName(data?.first_name || user.email?.split('@')[0] || ''));
-  }, [user]);
 
   return (
     <aside className={cn(
@@ -67,9 +60,6 @@ export function AppSidebar({ userType }: AppSidebarProps) {
           <span className="font-heading font-bold text-3xl text-sidebar-foreground">
             {appName.prefix}<span className="text-primary">{appName.suffix}</span>
           </span>
-          {!collapsed && firstName && (
-            <p className="text-sm text-muted-foreground mt-1">Hi, {firstName}</p>
-          )}
         </div>
         <button
           onClick={() => setCollapsed(!collapsed)}
