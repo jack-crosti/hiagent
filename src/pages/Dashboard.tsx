@@ -22,11 +22,13 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ totalIncome: 0, totalExpenses: 0, pendingGst: 0, dealsPipeline: 0, dealsCount: 0, isDemo: true });
   const [txns, setTxns] = useState<TxnRow[]>([]);
   const [deals, setDeals] = useState<DealRow[]>([]);
-  
+  const [firstName, setFirstName] = useState('');
 
   useEffect(() => {
     if (!user) return;
     loadStats();
+    supabase.from('profiles').select('first_name').eq('owner_user_id', user.id).maybeSingle()
+      .then(({ data }) => setFirstName(data?.first_name || user.email?.split('@')[0] || ''));
   }, [user]);
 
   async function loadStats() {
@@ -52,7 +54,7 @@ export default function Dashboard() {
     <>
       <PageHeader
         title="Dashboard"
-        description={`Welcome back${stats.isDemo ? ' — try demo mode to explore' : ''}`}
+        description={`Hi, ${firstName}${stats.isDemo ? ' — try demo mode to explore' : ''}`}
         action={
           <div className="flex items-center gap-3">
             <Link to="/personal-finance">
