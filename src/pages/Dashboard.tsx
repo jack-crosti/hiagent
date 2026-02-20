@@ -15,13 +15,13 @@ import { IncomeExpenseChart } from '@/components/dashboard/IncomeExpenseChart';
 import { PipelineChart } from '@/components/dashboard/PipelineChart';
 import { DemoModeCard } from '@/components/dashboard/DemoModeCard';
 
-interface TxnRow { date: string; amount: number; type: string; }
-interface DealRow { listing_name: string | null; deal_type: string; net_to_user_after_tax: number | null; probability: number | null; status: string | null; }
+interface TxnRow { date: string; amount: number; type: string; is_demo?: boolean | null; }
+interface DealRow { listing_name: string | null; deal_type: string; net_to_user_after_tax: number | null; probability: number | null; status: string | null; is_demo?: boolean | null; }
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { isBroker } = useUserType();
-  const [stats, setStats] = useState({ totalIncome: 0, totalExpenses: 0, pendingGst: 0, dealsPipeline: 0, dealsCount: 0, isDemo: true });
+  const [stats, setStats] = useState({ totalIncome: 0, totalExpenses: 0, pendingGst: 0, dealsPipeline: 0, dealsCount: 0, isDemo: true, hasDemoData: false });
   const [txns, setTxns] = useState<TxnRow[]>([]);
   const [deals, setDeals] = useState<DealRow[]>([]);
   const [firstName, setFirstName] = useState('');
@@ -36,7 +36,7 @@ export default function Dashboard() {
   async function loadStats() {
     const [{ data: dealsData }, { data: txnsData }, { data: gstPeriods }, { data: profile }] = await Promise.all([
       supabase.from('deals').select('*').eq('owner_user_id', user!.id).neq('status', 'closed'),
-      supabase.from('transactions').select('amount, type, date').eq('owner_user_id', user!.id),
+      supabase.from('transactions').select('amount, type, date, is_demo').eq('owner_user_id', user!.id),
       supabase.from('gst_periods').select('net_gst, status').eq('owner_user_id', user!.id).eq('status', 'open'),
       supabase.from('profiles').select('avatar_url').eq('owner_user_id', user!.id).maybeSingle(),
     ]);
@@ -46,10 +46,11 @@ export default function Dashboard() {
     const gst = gstPeriods?.reduce((s, g) => s + Number(g.net_gst), 0) ?? 0;
     const pipeline = dealsData?.reduce((s, d) => s + Number(d.net_to_user_after_tax) * Number(d.probability), 0) ?? 0;
     const hasData = (dealsData?.length ?? 0) > 0 || (txnsData?.length ?? 0) > 0;
+    const hasDemoData = dealsData?.some(d => d.is_demo) || txnsData?.some(t => t.is_demo) || false;
 
     setTxns((txnsData as TxnRow[]) ?? []);
     setDeals((dealsData as DealRow[]) ?? []);
-    setStats({ totalIncome: income, totalExpenses: expenses, pendingGst: gst, dealsPipeline: pipeline, dealsCount: dealsData?.length ?? 0, isDemo: !hasData });
+    setStats({ totalIncome: income, totalExpenses: expenses, pendingGst: gst, dealsPipeline: pipeline, dealsCount: dealsData?.length ?? 0, isDemo: !hasData, hasDemoData });
   }
 
   return (
@@ -113,9 +114,9 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {stats.isDemo && <div className="scroll-reveal"><DemoModeCard userId={user?.id ?? ''} onComplete={loadStats} /></div>}
+        {(stats.isDemo || stats.hasDemoData) && <div className="scroll-reveal"><DemoModeCard userId={user?.id ?? ''} onComplete={loadStats} /></div>}
 
-        {!stats.isDemo && (
+        {!stats.isDemo && !stats.hasDemoData && (
           <div className="scroll-reveal">
             <Card>
               <CardHeader><CardTitle className="text-lg font-heading">Recent Activity</CardTitle></CardHeader>
