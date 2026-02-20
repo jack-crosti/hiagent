@@ -84,12 +84,12 @@ export default function Dashboard() {
       </div>
 
       {/* Charts — bento grid */}
-      {!stats.isDemo && (
-        <div className="grid gap-6 lg:grid-cols-3 mb-8 scroll-reveal-stagger">
-          <div className="lg:col-span-2 scroll-reveal">
+      {(txns.length > 0 || deals.length > 0) && (
+        <div className="grid gap-6 lg:grid-cols-3 mb-8 animate-fade-in">
+          <div className="lg:col-span-2">
             <IncomeExpenseChart transactions={txns} />
           </div>
-          <div className="scroll-reveal">
+          <div>
             <PipelineChart deals={deals} />
           </div>
         </div>
