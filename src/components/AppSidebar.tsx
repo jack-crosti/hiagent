@@ -6,14 +6,14 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard, ArrowRightLeft, BookOpen, Receipt,
   CreditCard, Brain, Zap, User, Megaphone, FileText,
-  Palette, Settings, LogOut, ChevronLeft, ChevronRight, Eye, Paintbrush, Moon
+  Palette, Settings, LogOut, ChevronLeft, ChevronRight, Eye, Moon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,7 +33,7 @@ const navItems = [
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
-  const { activeTheme, setColorFamily, themes, isDark, toggleDarkMode } = useTheme();
+  const { isDark, toggleDarkMode } = useTheme();
   const { isDemoMode, enterDemo, exitDemo } = useDemo();
   const location = useLocation();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -95,39 +95,9 @@ export function AppSidebar() {
 
       <Separator className="mt-2" />
 
-      {/* Theme Switcher — color families only */}
+      {/* Dark mode toggle */}
       {!collapsed && (
-        <div className="px-3 py-2 space-y-2">
-          <div className="flex items-center gap-2 mb-1.5">
-            <Paintbrush size={14} className="text-sidebar-foreground/50" />
-            <span className="text-xs font-medium text-sidebar-foreground/50">Theme</span>
-          </div>
-          <Select
-            value={(() => {
-              const lightThemes = themes.filter(t => !t.dark);
-              if (lightThemes.find(t => t.id === activeTheme)) return activeTheme;
-              // Find the light pair for the active dark theme
-              const darkTheme = themes.find(t => t.id === activeTheme);
-              return darkTheme?.pairId || 'teal-warm';
-            })()}
-            onValueChange={setColorFamily}
-          >
-            <SelectTrigger className="h-8 text-xs bg-sidebar-accent/50 border-sidebar-accent text-sidebar-foreground">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {themes.filter(t => !t.dark).map(t => (
-                <SelectItem key={t.id} value={t.id}>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: `hsl(${t.vars['--primary']})` }} />
-                    {t.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Dark mode toggle */}
+        <div className="px-3 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Moon size={14} className="text-sidebar-foreground/50" />

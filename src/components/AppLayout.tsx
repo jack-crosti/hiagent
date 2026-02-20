@@ -31,10 +31,7 @@ function isSetupIncomplete(profile: Record<string, unknown> | null, setupState: 
   const logoSkipped = setupState?.skipped === true;
   const logoNotSet = !profile.avatar_url && !logoSkipped;
 
-  // Theme not set
-  const themeNotSet = !profile.active_theme;
-
-  return splitsNotSet || whrNotSet || logoNotSet || themeNotSet;
+  return splitsNotSet || whrNotSet || logoNotSet;
 }
 
 export function AppLayout({ children }: { children: ReactNode }) {
