@@ -1,190 +1,219 @@
 
-# Premium Visual Overhaul — Outstaff-Inspired Design
+# Deep Visual Overhaul — Match Outstaff Reference
 
-## Overview
+## The Problem
 
-Transform the entire app's visual identity to match the premium, modern dashboard shown in the reference screenshot. This includes larger border radii, glassmorphism effects, smoother page/sidebar transitions, refined card styles with subtle gradients, and polished micro-interactions throughout.
+Previous updates added rounded corners and subtle tweaks, but the app still looks generic because the changes were too subtle. The reference screenshot has a fundamentally different visual structure that requires bolder changes.
 
-## Key Design Principles from Reference
+## What Makes the Reference Look Premium
 
-- **Extra-rounded cards** (border-radius ~1rem / 16px instead of current 12px)
-- **Soft, layered card shadows** with slightly elevated feel
-- **Lavender/lilac background** with white cards (already close, needs refinement)
-- **Smooth sidebar navigation transitions** with active state highlighting (filled pill background)
-- **Page content transitions** — fade + slide when switching routes
-- **Dialog/modal animations** — smoother scale + backdrop blur
-- **Micro-interactions** — hover lift on cards, subtle scale on buttons, smooth color transitions on nav items
-- **Cleaner typography spacing** — more whitespace, larger headings
+Looking at the Outstaff screenshot carefully:
+
+1. **Strong lavender/purple background** (not near-white -- closer to 90-92% lightness with strong purple saturation)
+2. **Pure white cards with NO visible borders** -- cards float on the colored background using shadow alone
+3. **Generous internal padding** on cards (p-6 to p-8)
+4. **Sidebar is distinctly lighter** than the main background, almost white, with ample spacing between nav items
+5. **Active nav item** uses a dark/primary filled pill -- very prominent
+6. **Bento-style grid** on the dashboard -- cards of different heights creating visual interest
+7. **Bar chart bars are thicker and more rounded** (radius 8+)
+8. **Much more whitespace** between sections (gap-6 instead of gap-4)
+9. **Top header area** with user profile/avatar in the upper right
+10. **Card titles** are bold and well-spaced from content
 
 ---
 
 ## Changes
 
-### 1. CSS Variables and Global Styles (`src/index.css`)
+### 1. Stronger Background Color (`src/index.css`)
 
-- Increase `--radius` from `0.75rem` to `1rem` for rounder cards matching the screenshot
-- Add new CSS variables: `--shadow-elevated` for hover states, `--glass` for glassmorphism
-- Add page transition keyframes: `pageEnter` (fade + slide up), `pageExit`
-- Add card hover animation: subtle translateY(-2px) + shadow increase
-- Add `.glass` utility class: `backdrop-blur-xl bg-card/80`
-- Enhance scrollbar styling with smoother rounded thumb
-- Add smooth transition to body for dark mode color switches
+The current background (`260 20% 97%`) is almost white. The reference has a noticeably purple-tinted background.
 
-### 2. Tailwind Config (`tailwind.config.ts`)
+- Change `--background` to `250 25% 93%` (light mode) -- visibly lavender
+- Change `--card` to `0 0% 100%` -- pure white cards for maximum contrast against the lavender bg
+- Change `--sidebar-background` to `0 0% 100%` -- white sidebar (matching the reference)
+- Remove card border visibility: change `--border` to be very subtle or set card borders to `border-transparent`
+- Increase `--shadow-card` to produce a more visible soft shadow since borders are gone
+- Update dark mode values proportionally
 
-- Add new keyframes: `page-enter`, `card-hover-up`, `sidebar-highlight`
-- Add corresponding animation utilities
-- Add `glass` and `elevated-hover` as reusable shadow values
-- Increase default transition duration references
+### 2. Borderless Floating Cards (`src/components/ui/card.tsx`)
 
-### 3. Sidebar — Premium Transitions (`src/components/AppSidebar.tsx`)
+- Remove the visible border: change `border border-border/50` to `border-0`
+- Increase shadow to compensate: use a stronger `shadow-lg` style shadow
+- Increase default padding feel by adding `shadow-[0_2px_20px_-4px_rgba(0,0,0,0.08)]`
 
-- Add `transition-all duration-200` to all nav links (already partially there)
-- Active nav item: add a smooth pill background animation using CSS transition on background-color + transform
-- Add slight left-border indicator (3px rounded primary bar) on active item, animated in with scaleY
-- Sidebar collapse/expand: add `transition-[width] duration-300 ease-in-out` for smoother width change
-- Logo area: add subtle hover scale effect
+### 3. StatCard -- Cleaner Float (`src/components/StatCard.tsx`)
 
-### 4. Page Transitions (`src/components/AppLayout.tsx`)
+- Remove border, rely on shadow alone
+- Add more padding (p-6)
+- Ensure pure white background in light mode
 
-- Wrap `{children}` in a container with a CSS animation that triggers on route change
-- Use a `key={location.pathname}` on the content wrapper so React re-mounts with the fade-in animation on navigation
-- Animation: `animate-page-enter` — opacity 0 to 1, translateY(8px) to 0, over 300ms ease-out
+### 4. Sidebar -- White and Spacious (`src/components/AppSidebar.tsx`)
 
-### 5. Card Component — Premium Style (`src/components/ui/card.tsx`)
+- Background: pure white (via the CSS variable change)
+- Remove the border-right or make it extremely subtle
+- Increase nav item spacing: add `space-y-1` instead of `space-y-0.5`
+- Active item: use `bg-primary text-primary-foreground` with `rounded-xl` and `shadow-md` for a prominent pill
+- Inactive items: more muted, with generous padding `py-3 px-4`
+- Add user avatar/name in a top header bar above the sidebar content, or in the main content top-right
+- Increase logo area padding
 
-- Update default Card classes: increase rounding to `rounded-2xl`, add `transition-all duration-200`
-- Add hover effect: `hover:shadow-elevated hover:-translate-y-0.5` for a subtle lift
-- Keep border but make it softer: `border-border/50` for a more subtle divider
+### 5. Dashboard -- Bento Grid Layout (`src/pages/Dashboard.tsx`)
 
-### 6. StatCard — Refined Look (`src/components/StatCard.tsx`)
+- Change the stat cards from uniform 4-column grid to a layout with varying spans
+- Main content area: increase `gap-6` (from gap-4)
+- Add a top bar with date range and user greeting on the right
+- Charts: make them taller (h-72 instead of h-64)
+- Quick Actions card: style with a subtle accent background
 
-- Add gradient backgrounds: subtle `bg-gradient-to-br from-card to-card/80`
-- Icon container: make it slightly larger (h-11 w-11), add `rounded-xl` instead of `rounded-lg`
-- Add `group` class to parent, icon scales slightly on hover: `group-hover:scale-110 transition-transform`
-- Value text: slightly larger (text-3xl on desktop)
+### 6. Top Header Bar (`src/components/AppLayout.tsx`)
 
-### 7. Button — Smoother Interactions (`src/components/ui/button.tsx`)
+- Add a slim top bar inside the main content area with: search icon, notification icon, user avatar + name
+- This matches the reference's top-right user area
+- Style: transparent bg, just icons and text aligned right
 
-- Add `transition-all duration-200` (currently just `transition-colors`)
-- Default variant: add `hover:shadow-md hover:-translate-y-px active:translate-y-0` for press feedback
-- Increase border-radius to `rounded-xl` for all sizes
-- Ghost variant: add `hover:bg-accent/50` for softer hover
+### 7. Chart Refinements (`src/components/dashboard/IncomeExpenseChart.tsx`)
 
-### 8. Dialog — Premium Open/Close (`src/components/ui/dialog.tsx`)
+- Increase bar radius from 4 to 8 for rounder tops
+- Use a single primary color (solid blue-purple) for income bars instead of chart-1
+- Use a lighter muted color for expense bars
+- Remove CartesianGrid for cleaner look (reference has no grid lines)
+- Increase bar size/thickness
 
-- Overlay: change from `bg-black/80` to `bg-black/40 backdrop-blur-sm` for a frosted glass effect
-- Content: add `rounded-2xl` and `shadow-float` for more depth
-- Smoother animation: keep existing but extend duration to 250ms
+### 8. Button Polish (`src/components/ui/button.tsx`)
 
-### 9. Tabs — Polished Switcher (`src/components/ui/tabs.tsx`)
+- Outline variant: make border lighter, add `border-border/30`
+- All buttons: ensure `rounded-xl` and `font-semibold`
 
-- TabsList: `rounded-xl` instead of `rounded-md`, add `p-1.5` for more padding
-- TabsTrigger: `rounded-lg` instead of `rounded-sm`, add `transition-all duration-200`
-- Active state: add subtle shadow `data-[state=active]:shadow-sm`
+### 9. Select, Input, and Form Elements
 
-### 10. Badge — Softer Pills (`src/components/ui/badge.tsx`)
+- Ensure all form inputs match the new aesthetic: `rounded-xl`, no heavy borders, subtle shadow on focus
+- Input: `border-border/30` with `focus:shadow-md focus:border-primary/50`
 
-- Already rounded-full (good)
-- Add `transition-colors duration-200` for smoother variant changes
+### 10. Sheet/Drawer -- Premium (`src/components/ui/sheet.tsx`)
 
-### 11. Bottom Nav — Glass Effect (`src/components/BottomNav.tsx`)
-
-- Enhance backdrop blur: `backdrop-blur-xl bg-card/70` for stronger glass effect
-- Active icon: add scale transition `transition-all duration-200` with `scale-110` when active
-- Add a small dot indicator below active icon instead of just color change
-
-### 12. Progress Bar — Animated Fill (`src/components/ui/progress.tsx`)
-
-- Add gradient to the indicator: `bg-gradient-to-r from-primary to-primary/70`
-- Add `transition-all duration-500 ease-out` for smoother fill animation
-- Increase rounding to match new radius
-
-### 13. PageHeader — More Presence (`src/components/PageHeader.tsx`)
-
-- Increase heading size to `text-3xl` on desktop
-- Add bottom margin separator or subtle gradient underline
-- Add `animate-page-enter` to the header for coordinated page entry
+- Add `backdrop-blur-sm` to overlay
+- Content: `rounded-2xl` (for bottom sheets)
 
 ---
 
 ## Technical Details
 
-### New CSS keyframes in `src/index.css`:
+### Updated CSS variables in `src/index.css`:
 
 ```text
-@keyframes pageEnter {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes cardHover {
-  to { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+:root {
+  --background: 250 25% 93%;
+  --foreground: 240 20% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 20% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 20% 14%;
+  --primary: 255 55% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 250 20% 96%;
+  --secondary-foreground: 240 20% 14%;
+  --muted: 250 15% 90%;
+  --muted-foreground: 240 10% 42%;
+  --accent: 190 70% 50%;
+  --accent-foreground: 0 0% 100%;
+  --border: 250 10% 88%;
+  --input: 250 10% 88%;
+  --sidebar-background: 0 0% 100%;
+  --sidebar-accent: 250 20% 96%;
+  --shadow-card: 0 2px 20px -4px rgba(0,0,0,0.08);
+  --shadow-elevated: 0 8px 30px -6px rgba(0,0,0,0.12);
 }
 ```
 
-### New Tailwind animation in `tailwind.config.ts`:
-
-```text
-keyframes: {
-  "page-enter": {
-    "0%": { opacity: "0", transform: "translateY(12px)" },
-    "100%": { opacity: "1", transform: "translateY(0)" },
-  },
-},
-animation: {
-  "page-enter": "page-enter 0.35s ease-out",
-}
-```
-
-### AppLayout route-keyed transition:
-
-```text
-// In AppLayout, import useLocation
-const location = useLocation();
-
-// Wrap children with key for re-mount animation
-<div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
-  {children}
-</div>
-```
-
-### Card component update:
+### Card component (borderless):
 
 ```text
 <div className={cn(
-  "rounded-2xl border border-border/50 bg-card text-card-foreground shadow-card transition-all duration-200 hover:shadow-elevated hover:-translate-y-0.5",
+  "rounded-2xl bg-card text-card-foreground shadow-[0_2px_20px_-4px_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.12)] hover:-translate-y-0.5",
   className
 )} />
 ```
 
-### Dialog overlay glass effect:
-
-```text
-<DialogPrimitive.Overlay className={cn(
-  "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm ...",
-  className
-)} />
-```
-
-### Sidebar active indicator:
+### Sidebar nav item styling:
 
 ```text
 <RouterNavLink className={cn(
-  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
   isActive
-    ? 'bg-primary text-primary-foreground shadow-sm'
-    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
+    ? 'bg-primary text-primary-foreground shadow-md'
+    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
 )} />
 ```
 
-### Button refinement:
+### Dashboard bento grid:
 
 ```text
-"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none ..."
+<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+  {/* stat cards */}
+</div>
 
-// default variant:
-"bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm"
+<div className="grid gap-6 lg:grid-cols-3 mb-8">
+  <div className="lg:col-span-2">
+    <IncomeExpenseChart ... />
+  </div>
+  <PipelineChart ... />
+</div>
+
+<div className="grid gap-6 lg:grid-cols-3">
+  <div className="lg:col-span-2">
+    {/* Quick Actions or Recent Activity */}
+  </div>
+  {/* Demo or summary card */}
+</div>
 ```
 
-**Files changed:** 11 files (index.css, tailwind.config.ts, AppLayout.tsx, AppSidebar.tsx, card.tsx, StatCard.tsx, button.tsx, dialog.tsx, tabs.tsx, progress.tsx, PageHeader.tsx, BottomNav.tsx, badge.tsx)
+### Top header bar in AppLayout:
+
+```text
+<div className="flex items-center justify-between px-6 py-4">
+  <div />
+  <div className="flex items-center gap-4">
+    <button className="p-2 rounded-xl hover:bg-muted transition-colors">
+      <Search size={18} className="text-muted-foreground" />
+    </button>
+    <button className="p-2 rounded-xl hover:bg-muted transition-colors">
+      <Bell size={18} className="text-muted-foreground" />
+    </button>
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-medium">{userName}</span>
+      <Avatar ... />
+    </div>
+  </div>
+</div>
+```
+
+### Chart cleanup (IncomeExpenseChart):
+
+```text
+<BarChart data={data} barGap={8} barSize={32}>
+  {/* Remove CartesianGrid */}
+  <XAxis ... axisLine={false} tickLine={false} />
+  <YAxis ... axisLine={false} tickLine={false} />
+  <Bar dataKey="income" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+  <Bar dataKey="expenses" fill="hsl(var(--muted))" radius={[8, 8, 0, 0]} />
+</BarChart>
+```
+
+### Input component refinement:
+
+```text
+className="... rounded-xl border-border/30 focus-visible:shadow-md focus-visible:border-primary/50"
+```
+
+### Dark mode updated variables:
+
+```text
+.dark {
+  --background: 250 20% 7%;
+  --card: 250 18% 11%;
+  --sidebar-background: 250 20% 5%;
+  --shadow-card: 0 2px 20px -4px rgba(0,0,0,0.3);
+}
+```
+
+**Files changed:** ~12 files (index.css, card.tsx, StatCard.tsx, AppSidebar.tsx, AppLayout.tsx, Dashboard.tsx, IncomeExpenseChart.tsx, PipelineChart.tsx, button.tsx, input.tsx, sheet.tsx, PageHeader.tsx)
