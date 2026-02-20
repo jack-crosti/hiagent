@@ -11,6 +11,7 @@ import { UserTypeSelector } from '@/components/UserTypeSelector';
 import { DemoBanner } from '@/components/DemoBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { UserTypeProvider } from '@/contexts/UserTypeContext';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 /**
  * Checks whether the user's required settings are complete.
@@ -33,6 +34,18 @@ function isSetupIncomplete(profile: Record<string, unknown> | null, setupState: 
   const logoNotSet = !profile.avatar_url && !logoSkipped;
 
   return splitsNotSet || whrNotSet || logoNotSet;
+}
+
+/**
+ * Wrapper that activates scroll-reveal observer on each navigation.
+ */
+function MainContent({ location, children }: { location: ReturnType<typeof useLocation>; children: ReactNode }) {
+  useScrollReveal('main');
+  return (
+    <main className="flex-1 flex flex-col min-h-screen">
+      {children}
+    </main>
+  );
 }
 
 export function AppLayout({ children }: {children: ReactNode;}) {
@@ -92,13 +105,12 @@ export function AppLayout({ children }: {children: ReactNode;}) {
     <UserTypeProvider>
       <div className="flex min-h-screen w-full bg-background">
         {!isMobile && <AppSidebar userType={userType as string | null} />}
-        <main className="flex-1 flex flex-col min-h-screen">
-          
+        <MainContent location={location}>
           <SetupBanner />
           <div key={location.pathname} className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-page-enter">
             {children}
           </div>
-        </main>
+        </MainContent>
         {isMobile && <BottomNav />}
       </div>
     </UserTypeProvider>);
