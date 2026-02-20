@@ -53,14 +53,13 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
   // Step 5 - Theme
   const [theme, setTheme] = useState<ThemeData>({
     themeBase: 'light',
-    primaryColor: '#2A9D8F',
-    secondaryColor: '#E9C46A',
-    accentColor: '#E76F51',
-    backgroundColor: '#FAFAF7',
-    textColor: '#1E293B',
+    primaryColor: '#7C5CFC',
+    secondaryColor: '#E8E0F7',
+    accentColor: '#0ABAB5',
+    backgroundColor: '#F5F3FA',
+    textColor: '#1E1B2E',
     backgroundMode: 'solid',
     backgroundTextureId: null,
-    websiteUrl: '',
   });
 
   // Fetch user type
@@ -112,11 +111,10 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         property_sale_user_share: commission.propertyUser,
         property_sale_company_share: commission.propertyCompany,
         withholding_rate: commission.withholdingRate,
-        active_theme: theme.themeBase === 'dark' ? 'ocean-blue' : theme.themeBase === 'brand' ? 'sunset-coral' : 'teal-warm',
+        active_theme: 'lavender',
         background_mode: theme.backgroundMode,
         background_asset_id: theme.backgroundTextureId,
         avatar_url: activeLogo || null,
-        website_url: theme.websiteUrl || null,
       }).eq('owner_user_id', user.id);
 
       // Save brand profile if colors set
@@ -146,7 +144,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         current_step: STEP_LABELS.length,
         is_complete: !skipped,
         skipped,
-        website_url: theme.websiteUrl || null,
+        
       }, { onConflict: 'owner_user_id' });
 
       // Write audit logs

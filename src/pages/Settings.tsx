@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme, THEMES } from '@/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +27,7 @@ const FONT_OPTIONS = [
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { activeTheme, setTheme, themes, refreshBrand } = useTheme();
+  const { refreshBrand } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -262,23 +262,6 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div>
-              <Label className="mb-2 block">Theme Preset</Label>
-              <div className="grid grid-cols-5 gap-2">
-                {themes.map(t => (
-                  <button key={t.id} onClick={() => setTheme(t.id)}
-                    className={cn('rounded-xl border-2 p-3 text-center transition-all',
-                      activeTheme === t.id ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/40')}>
-                    <div className="flex gap-1 justify-center mb-2">
-                      <div className="h-4 w-4 rounded-full" style={{ backgroundColor: `hsl(${t.vars['--primary']})` }} />
-                      <div className="h-4 w-4 rounded-full" style={{ backgroundColor: `hsl(${t.vars['--accent']})` }} />
-                    </div>
-                    <p className="text-xs font-medium">{t.name}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Separator />
             <div>
               <Label className="mb-2 block">Logo</Label>
               <div className="flex items-center gap-4">
