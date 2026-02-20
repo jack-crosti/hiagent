@@ -35,7 +35,7 @@ export default function Dashboard() {
 
   async function loadStats() {
     const [{ data: dealsData }, { data: txnsData }, { data: gstPeriods }, { data: profile }] = await Promise.all([
-      supabase.from('deals').select('*').eq('owner_user_id', user!.id).eq('status', 'pipeline'),
+      supabase.from('deals').select('*').eq('owner_user_id', user!.id).neq('status', 'closed'),
       supabase.from('transactions').select('amount, type, date').eq('owner_user_id', user!.id),
       supabase.from('gst_periods').select('net_gst, status').eq('owner_user_id', user!.id).eq('status', 'open'),
       supabase.from('profiles').select('avatar_url').eq('owner_user_id', user!.id).maybeSingle(),

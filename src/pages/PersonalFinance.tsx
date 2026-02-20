@@ -17,6 +17,7 @@ import { formatNZD, generateScenarios, DEFAULT_SPLITS, type UserSplits } from '@
 import { cn } from '@/lib/utils';
 import { DealDialog } from '@/components/deals/DealDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useUserType } from '@/contexts/UserTypeContext';
 
 const DEAL_STATUSES = [
   { value: 'on_market', label: 'On Market', color: 'bg-blue-500' },
@@ -27,6 +28,7 @@ const DEAL_STATUSES = [
 export default function PersonalFinancePage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isAgent } = useUserType();
   const [deals, setDeals] = useState<any[]>([]);
   const [goalPlan, setGoalPlan] = useState<any>(null);
   const [splits, setSplits] = useState<UserSplits>(DEFAULT_SPLITS);
@@ -142,7 +144,7 @@ export default function PersonalFinancePage() {
     targetNetAmount: gap,
     splits,
     probabilityThreshold: goalPlan?.probability_threshold ?? 0.60,
-    dealTypes: ['business_sale', 'lease'],
+    dealTypes: isAgent ? ['property_sale'] : ['business_sale', 'lease'],
   });
 
   if (loading) {
