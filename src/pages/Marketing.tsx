@@ -82,9 +82,10 @@ export default function MarketingPage() {
   const [selectedCta, setSelectedCta] = useState('Enquire now');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['LinkedIn']);
   const [listingName, setListingName] = useState('');
+  const [listingUrl, setListingUrl] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [generatedPost, setGeneratedPost] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
+  const [generatedPosts, setGeneratedPosts] = useState<any[]>([]);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // Weekly/Monthly plan state
   const [planType, setPlanType] = useState<'weekly' | 'monthly'>('weekly');
@@ -141,14 +142,18 @@ export default function MarketingPage() {
       return;
     }
     setGenerating(true);
-    setGeneratedPost(null);
+    setGeneratedPosts([]);
     try {
       const style = STYLE_MODES.find(s => s.id === selectedStyle)?.label || 'Direct';
-      const result = await callMarketingAI('generate_post', {
-        goal: selectedGoal, style, cta: selectedCta,
-        platforms: selectedPlatforms, listingName,
-      });
-      setGeneratedPost({ ...result, platform: selectedPlatforms[0] || 'LinkedIn' });
+      const posts: any[] = [];
+      for (const platform of selectedPlatforms) {
+        const result = await callMarketingAI('generate_post', {
+          goal: selectedGoal, style, cta: selectedCta,
+          platforms: [platform], listingName, listingUrl,
+        });
+        posts.push({ ...result, platform });
+      }
+      setGeneratedPosts(posts);
     } catch (err: any) {
       toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -195,12 +200,13 @@ export default function MarketingPage() {
     }
   }
 
-  function handleCopy() {
-    if (!generatedPost) return;
-    const text = `${generatedPost.hook}\n\n${generatedPost.body}\n\n${generatedPost.cta}\n\n${generatedPost.hashtags}`;
+  function handleCopy(index: number) {
+    const post = generatedPosts[index];
+    if (!post) return;
+    const text = `${post.hook}\n\n${post.body}\n\n${post.cta}\n\n${post.hashtags}`;
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
     toast({ title: 'Copied to clipboard' });
   }
 
@@ -286,6 +292,11 @@ export default function MarketingPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Listing URL (optional)</Label>
+                  <Input placeholder="https://www.realestate.co.nz/..." value={listingUrl} onChange={e => setListingUrl(e.target.value)} />
+                </div>
+
+                <div className="space-y-2">
                   <Label>Goal Type</Label>
                   <div className="flex flex-wrap gap-2">
                     {GOAL_TYPES.map(g => (
@@ -352,37 +363,41 @@ export default function MarketingPage() {
                 <CardTitle className="text-lg font-heading">Generated Post</CardTitle>
               </CardHeader>
               <CardContent>
-                {!generatedPost ? (
+                {generatedPosts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                     <Megaphone size={32} className="mb-3 opacity-50" />
                     <p className="text-sm">Select your options and generate a post</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <Badge variant="secondary">{generatedPost.platform}</Badge>
-                    <div className="space-y-3 text-sm">
-                      {[
-                        { label: 'Hook', value: generatedPost.hook, bold: true },
-                        { label: 'Main Copy', value: generatedPost.body },
-                        { label: 'CTA', value: generatedPost.cta },
-                        { label: 'Hashtags', value: generatedPost.hashtags, className: 'text-primary' },
-                        { label: 'Image Idea', value: generatedPost.imageIdea, className: 'italic text-muted-foreground' },
-                      ].map(item => item.value && (
-                        <div key={item.label}>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{item.label}</p>
-                          <p className={cn(item.bold && 'font-medium', item.className)}>{item.value}</p>
+                  <div className="space-y-6">
+                    {generatedPosts.map((post, i) => (
+                      <div key={i} className="space-y-4 border-b border-border pb-5 last:border-0 last:pb-0">
+                        <Badge variant="secondary">{post.platform}</Badge>
+                        <div className="space-y-3 text-sm">
+                          {[
+                            { label: 'Hook', value: post.hook, bold: true },
+                            { label: 'Main Copy', value: post.body },
+                            { label: 'CTA', value: post.cta },
+                            { label: 'Hashtags', value: post.hashtags, className: 'text-primary' },
+                            { label: 'Image Idea', value: post.imageIdea, className: 'italic text-muted-foreground' },
+                          ].map(item => item.value && (
+                            <div key={item.label}>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{item.label}</p>
+                              <p className={cn(item.bold && 'font-medium', item.className)}>{item.value}</p>
+                            </div>
+                          ))}
+                          {post.videoScript && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Video Script</p>
+                              <pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-muted/50 rounded-lg p-3">{post.videoScript}</pre>
+                            </div>
+                          )}
                         </div>
-                      ))}
-                      {generatedPost.videoScript && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Video Script</p>
-                          <pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-muted/50 rounded-lg p-3">{generatedPost.videoScript}</pre>
-                        </div>
-                      )}
-                    </div>
-                    <Button variant="outline" size="sm" onClick={handleCopy} className="w-full">
-                      {copied ? <><Check size={14} className="mr-1.5" /> Copied!</> : <><Copy size={14} className="mr-1.5" /> Copy to Clipboard</>}
-                    </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleCopy(i)} className="w-full">
+                          {copiedIndex === i ? <><Check size={14} className="mr-1.5" /> Copied!</> : <><Copy size={14} className="mr-1.5" /> Copy to Clipboard</>}
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
