@@ -20,6 +20,7 @@ import MarketingPage from "@/pages/Marketing";
 import ReportsPage from "@/pages/Reports";
 import CustomizationPage from "@/pages/Customization";
 import SettingsPage from "@/pages/Settings";
+import GuidePage from "@/pages/Guide";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/reports" element={<AppLayout><ReportsPage /></AppLayout>} />
                 <Route path="/customization" element={<AppLayout><CustomizationPage /></AppLayout>} />
                 <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
+                <Route path="/guide" element={<AppLayout><GuidePage /></AppLayout>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </DemoProvider>
