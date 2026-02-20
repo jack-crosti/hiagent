@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import {
   Megaphone, Plus, Calendar, Mail, Lightbulb, Sparkles, Copy, Check,
-  Smile, BriefcaseBusiness, Wand2, RefreshCw, Palette, Zap
+  Smile, BriefcaseBusiness, Wand2, RefreshCw, Palette, Zap, ChevronDown, ChevronUp, X, Clock, ListChecks
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -100,6 +100,11 @@ export default function MarketingPage() {
   const [customTopic, setCustomTopic] = useState('');
   const [generatingContent, setGeneratingContent] = useState(false);
   const [generatedIdeas, setGeneratedIdeas] = useState<any[]>([]);
+
+  // Expandable idea state
+  const [expandedIdeaIndex, setExpandedIdeaIndex] = useState<number | null>(null);
+  const [expandedIdeaDetail, setExpandedIdeaDetail] = useState<any>(null);
+  const [expandingIdea, setExpandingIdea] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -188,6 +193,8 @@ export default function MarketingPage() {
     }
     setGeneratingContent(true);
     setGeneratedIdeas([]);
+    setExpandedIdeaIndex(null);
+    setExpandedIdeaDetail(null);
     try {
       const result = await callMarketingAI('generate_content_ideas', {
         topics: selectedTopics, customTopic: customTopic.trim(),
@@ -197,6 +204,27 @@ export default function MarketingPage() {
       toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
     } finally {
       setGeneratingContent(false);
+    }
+  }
+
+  async function handleExpandIdea(index: number) {
+    if (expandedIdeaIndex === index) {
+      setExpandedIdeaIndex(null);
+      setExpandedIdeaDetail(null);
+      return;
+    }
+    setExpandedIdeaIndex(index);
+    setExpandedIdeaDetail(null);
+    setExpandingIdea(true);
+    try {
+      const idea = generatedIdeas[index];
+      const result = await callMarketingAI('expand_content_idea', { idea });
+      setExpandedIdeaDetail(result);
+    } catch (err: any) {
+      toast({ title: 'Failed to expand idea', description: err.message, variant: 'destructive' });
+      setExpandedIdeaIndex(null);
+    } finally {
+      setExpandingIdea(false);
     }
   }
 
@@ -222,6 +250,28 @@ export default function MarketingPage() {
     medium: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
     advanced: 'bg-red-500/10 text-red-700 dark:text-red-400',
   };
+
+  function renderPlanActions(actions: any[]) {
+    return actions.map((item: any, i: number) => (
+      <div key={i} className="flex items-start justify-between rounded-lg border border-border p-3 hover:bg-muted/30 transition-colors">
+        <div className="flex items-start gap-3 flex-1">
+          <span className="text-xs font-semibold text-muted-foreground w-24 shrink-0 pt-0.5">{item.day}</span>
+          <div className="space-y-1">
+            <span className="text-sm font-medium">{item.task}</span>
+            {item.details && <p className="text-xs text-muted-foreground">{item.details}</p>}
+          </div>
+        </div>
+        <div className="flex gap-1.5 shrink-0 ml-2">
+          <Badge variant="secondary" className="text-xs">{item.platform}</Badge>
+          {item.type && (
+            <Badge className={cn('text-xs', typeColors[item.type] || 'bg-muted text-muted-foreground')}>
+              {item.type}
+            </Badge>
+          )}
+        </div>
+      </div>
+    ));
+  }
 
   return (
     <>
@@ -294,6 +344,7 @@ export default function MarketingPage() {
                 <div className="space-y-2">
                   <Label>Listing URL (optional)</Label>
                   <Input placeholder="https://www.realestate.co.nz/..." value={listingUrl} onChange={e => setListingUrl(e.target.value)} />
+                  <p className="text-xs text-muted-foreground">Paste a listing link and the AI will extract property details automatically</p>
                 </div>
 
                 <div className="space-y-2">
@@ -373,6 +424,11 @@ export default function MarketingPage() {
                     {generatedPosts.map((post, i) => (
                       <div key={i} className="space-y-4 border-b border-border pb-5 last:border-0 last:pb-0">
                         <Badge variant="secondary">{post.platform}</Badge>
+                        {post.propertyDetails && (
+                          <div className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                            <span className="font-semibold">Property Details:</span> {post.propertyDetails}
+                          </div>
+                        )}
                         <div className="space-y-3 text-sm">
                           {[
                             { label: 'Hook', value: post.hook, bold: true },
@@ -487,27 +543,21 @@ export default function MarketingPage() {
                     <Calendar size={32} className="mb-3 opacity-50" />
                     <p className="text-sm">Set your preferences and generate a plan</p>
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    {(generatedPlan.actions || []).map((item: any, i: number) => (
-                      <div key={i} className="flex items-start justify-between rounded-lg border border-border p-3 hover:bg-muted/30 transition-colors">
-                        <div className="flex items-start gap-3 flex-1">
-                          <span className="text-xs font-semibold text-muted-foreground w-24 shrink-0 pt-0.5">{item.day}</span>
-                          <div className="space-y-1">
-                            <span className="text-sm font-medium">{item.task}</span>
-                            {item.details && <p className="text-xs text-muted-foreground">{item.details}</p>}
-                          </div>
+                ) : generatedPlan.weeks ? (
+                  <div className="space-y-5">
+                    {generatedPlan.weeks.map((week: any, wi: number) => (
+                      <div key={wi} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold text-foreground">{week.week}</h4>
+                          {week.theme && <span className="text-xs text-muted-foreground">— {week.theme}</span>}
                         </div>
-                        <div className="flex gap-1.5 shrink-0 ml-2">
-                          <Badge variant="secondary" className="text-xs">{item.platform}</Badge>
-                          {item.type && (
-                            <Badge className={cn('text-xs', typeColors[item.type] || 'bg-muted text-muted-foreground')}>
-                              {item.type}
-                            </Badge>
-                          )}
-                        </div>
+                        {renderPlanActions(week.actions || [])}
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {renderPlanActions(generatedPlan.actions || [])}
                   </div>
                 )}
               </CardContent>
@@ -525,7 +575,7 @@ export default function MarketingPage() {
                   <Lightbulb size={18} className="text-primary" />
                   AI Content Generator
                 </CardTitle>
-                <CardDescription>Pick topics or add your own — AI creates structured content ideas</CardDescription>
+                <CardDescription>Pick topics or add your own — AI creates structured content ideas. Click any idea to get a detailed execution plan.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -556,32 +606,123 @@ export default function MarketingPage() {
             {generatedIdeas.length > 0 && (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {generatedIdeas.map((idea, i) => (
-                  <Card key={i} className="shadow-card hover:shadow-md transition-shadow">
-                    <CardContent className="pt-5 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                          <Lightbulb size={16} className="text-primary" />
+                  <div key={i}>
+                    <Card
+                      className={cn(
+                        "shadow-card hover:shadow-md transition-shadow cursor-pointer",
+                        expandedIdeaIndex === i && "ring-2 ring-primary"
+                      )}
+                      onClick={() => handleExpandIdea(i)}
+                    >
+                      <CardContent className="pt-5 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                            <Lightbulb size={16} className="text-primary" />
+                          </div>
+                          <div className="space-y-1 flex-1">
+                            <p className="text-sm font-medium">{idea.title}</p>
+                            <p className="text-xs text-muted-foreground">{idea.description}</p>
+                          </div>
+                          <div className="shrink-0">
+                            {expandedIdeaIndex === i ? (
+                              <ChevronUp size={16} className="text-muted-foreground" />
+                            ) : (
+                              <ChevronDown size={16} className="text-muted-foreground" />
+                            )}
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">{idea.title}</p>
-                          <p className="text-xs text-muted-foreground">{idea.description}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(idea.platforms || []).map((p: string) => (
+                            <Badge key={p} variant="outline" className="text-xs">{p}</Badge>
+                          ))}
+                          {idea.format && (
+                            <Badge variant="secondary" className="text-xs capitalize">{idea.format}</Badge>
+                          )}
+                          {idea.difficulty && (
+                            <Badge className={cn('text-xs', difficultyColors[idea.difficulty] || '')}>
+                              {idea.difficulty}
+                            </Badge>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(idea.platforms || []).map((p: string) => (
-                          <Badge key={p} variant="outline" className="text-xs">{p}</Badge>
-                        ))}
-                        {idea.format && (
-                          <Badge variant="secondary" className="text-xs capitalize">{idea.format}</Badge>
-                        )}
-                        {idea.difficulty && (
-                          <Badge className={cn('text-xs', difficultyColors[idea.difficulty] || '')}>
-                            {idea.difficulty}
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+
+                    {/* Expanded detail panel */}
+                    {expandedIdeaIndex === i && (
+                      <Card className="mt-2 border-primary/30 bg-primary/5">
+                        <CardContent className="pt-4 space-y-4">
+                          {expandingIdea ? (
+                            <div className="flex items-center justify-center py-8 text-muted-foreground">
+                              <RefreshCw size={18} className="mr-2 animate-spin" />
+                              <span className="text-sm">Generating execution plan...</span>
+                            </div>
+                          ) : expandedIdeaDetail ? (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-semibold flex items-center gap-2">
+                                  <ListChecks size={16} className="text-primary" />
+                                  Execution Plan
+                                </h4>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedIdeaIndex(null);
+                                    setExpandedIdeaDetail(null);
+                                  }}
+                                >
+                                  <X size={14} />
+                                </Button>
+                              </div>
+
+                              {expandedIdeaDetail.executionSteps?.length > 0 && (
+                                <div className="space-y-1.5">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Steps</p>
+                                  <ol className="list-decimal list-inside space-y-1 text-sm text-foreground">
+                                    {expandedIdeaDetail.executionSteps.map((step: string, si: number) => (
+                                      <li key={si}>{step}</li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              )}
+
+                              {expandedIdeaDetail.copyOutline && (
+                                <div className="space-y-1">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Copy / Script Outline</p>
+                                  <p className="text-sm text-foreground whitespace-pre-wrap">{expandedIdeaDetail.copyOutline}</p>
+                                </div>
+                              )}
+
+                              <div className="grid grid-cols-2 gap-3">
+                                {expandedIdeaDetail.schedule && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Schedule</p>
+                                    <p className="text-sm">{expandedIdeaDetail.schedule}</p>
+                                  </div>
+                                )}
+                                {expandedIdeaDetail.estimatedTime && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                                      <Clock size={12} /> Est. Time
+                                    </p>
+                                    <p className="text-sm">{expandedIdeaDetail.estimatedTime}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {expandedIdeaDetail.formatTips && (
+                                <div className="space-y-1">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Format Tips</p>
+                                  <p className="text-sm text-muted-foreground">{expandedIdeaDetail.formatTips}</p>
+                                </div>
+                              )}
+                            </>
+                          ) : null}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

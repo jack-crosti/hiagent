@@ -83,6 +83,37 @@ STYLE REQUIREMENTS:
 - Feels written by someone who closes deals, not someone who writes blog posts.
 `;
 
+async function fetchListingContent(listingUrl: string): Promise<string | null> {
+  try {
+    const pageRes = await fetch(listingUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+      redirect: "follow",
+    });
+    if (!pageRes.ok) {
+      console.error("Listing fetch failed:", pageRes.status);
+      return null;
+    }
+    const html = await pageRes.text();
+    const textContent = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/\s+/g, " ")
+      .trim()
+      .substring(0, 4000);
+    return textContent;
+  } catch (e) {
+    console.error("Failed to fetch listing URL:", e);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -114,37 +145,61 @@ serve(async (req) => {
       const emojiInstruction = includeEmojis ? "Use relevant emojis throughout to make it engaging." : "Do NOT use any emojis at all. Keep it clean and professional.";
       const toneInstruction = tone === "casual" ? "Use a casual, friendly, conversational tone." : "Use a professional, credible, authoritative tone.";
 
+      // Fetch listing page content if URL provided
+      let listingContent = "";
+      if (listingUrl) {
+        const content = await fetchListingContent(listingUrl);
+        if (content) {
+          listingContent = `\n\nListing page content (use this for accurate property details including address, bedrooms, bathrooms, car parks, land size, floor area, price/sale method, and key features):\n${content}`;
+        }
+      }
+
       systemPrompt = `${masterPrompt}
 
 ${emojiInstruction} ${toneInstruction}
 
 Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exact structure:
-{"hook":"attention-grabbing opening line","body":"main copy 2-4 sentences","cta":"call to action line","hashtags":"5-8 relevant hashtags","imageIdea":"visual content suggestion","videoScript":"15-second video script if platform is TikTok/Instagram/YouTube, otherwise null"}${styleAppend}`;
+{"hook":"attention-grabbing opening line","body":"main copy 2-4 sentences","cta":"call to action line","hashtags":"5-8 relevant hashtags","imageIdea":"visual content suggestion","videoScript":"15-second video script if platform is TikTok/Instagram/YouTube, otherwise null","propertyDetails":"brief summary of key property details like bedrooms, bathrooms, car parks, land size, price/sale method - only if listing details are available, otherwise null"}${styleAppend}`;
 
       userPrompt = `Generate a ${style} social media post for ${platforms.join(", ")}.
 Goal: ${goal}
 ${listingName ? `Listing: ${listingName}` : ""}
 ${listingUrl ? `Listing URL: ${listingUrl}` : ""}
 CTA: ${cta}
-Keep it concise and platform-appropriate.`;
+Keep it concise and platform-appropriate.${listingContent}`;
 
     } else if (action === "generate_plan") {
       const { planType, platform, frequency, goals, includeEmojis, tone } = params;
       const emojiInstruction = includeEmojis ? "Include relevant emojis." : "No emojis.";
       const toneInstruction = tone === "casual" ? "Casual and friendly tone." : "Professional tone.";
 
-      systemPrompt = `${masterPrompt}
+      if (planType === "monthly") {
+        systemPrompt = `${masterPrompt}
+
+You are also a marketing strategist. ${emojiInstruction} ${toneInstruction}
+
+Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exact structure:
+{"title":"plan title","summary":"brief overview","weeks":[{"week":"Week 1","theme":"weekly theme","actions":[{"day":"day label","task":"specific action item","platform":"platform name","type":"content|outreach|networking|email","details":"extra context"}]},{"week":"Week 2","theme":"weekly theme","actions":[...]},{"week":"Week 3","theme":"weekly theme","actions":[...]},{"week":"Week 4","theme":"weekly theme","actions":[...]}]}${styleAppend}`;
+
+        userPrompt = `Create a 4-week monthly marketing plan.
+Platform focus: ${platform}
+Posting frequency: ${frequency}
+Goals: ${goals}
+Structure as Week 1, Week 2, Week 3, Week 4. Each week should have a theme and actions matching the posting frequency of ${frequency}. Make each week's actions specific and actionable.`;
+      } else {
+        systemPrompt = `${masterPrompt}
 
 You are also a marketing strategist. ${emojiInstruction} ${toneInstruction}
 
 Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exact structure:
 {"title":"plan title","summary":"brief overview","actions":[{"day":"day or week label","task":"specific action item","platform":"platform name","type":"content|outreach|networking|email","details":"extra context"}]}${styleAppend}`;
 
-      userPrompt = `Create a ${planType} marketing plan.
+        userPrompt = `Create a weekly marketing plan.
 Platform focus: ${platform}
 Posting frequency: ${frequency}
 Goals: ${goals}
 Include 5-7 specific, actionable items.`;
+      }
 
     } else if (action === "generate_content_ideas") {
       const { topics, customTopic, includeEmojis, tone } = params;
@@ -160,6 +215,22 @@ Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exa
 
       userPrompt = `Generate 6 content ideas based on these topics: ${topics.join(", ")}${customTopic ? `, ${customTopic}` : ""}.
 Make them specific, actionable, and relevant to the NZ market.`;
+
+    } else if (action === "expand_content_idea") {
+      const { idea } = params;
+
+      systemPrompt = `${masterPrompt}
+
+You are a content execution planner. Given a content idea, create a detailed, actionable execution plan.
+
+Return ONLY valid JSON. No markdown, no code fences, no extra text. Use this exact structure:
+{"title":"idea title","executionSteps":["step 1","step 2","step 3","step 4","step 5"],"copyOutline":"draft copy or script outline","schedule":"recommended posting schedule","formatTips":"how to create this content format effectively","estimatedTime":"estimated time to create e.g. 2 hours","platforms":["platform1","platform2"]}${styleAppend}`;
+
+      userPrompt = `Create a detailed execution plan for this content idea:
+Title: ${idea.title}
+Description: ${idea.description}
+Format: ${idea.format}
+Platforms: ${(idea.platforms || []).join(", ")}`;
 
     } else {
       return new Response(JSON.stringify({ error: "Unknown action" }), {
