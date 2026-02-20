@@ -1,154 +1,115 @@
 
-
-# Marketing Planner: Three Enhancements
+# Simplify to Single Purple Theme with Dark Mode Toggle
 
 ## Overview
 
-Three improvements to the Marketing Planner:
-1. **Post Builder**: Scrape listing URL to extract real property details (bedrooms, bathrooms, parking, land size, price, sale method) and feed them to the AI
-2. **Weekly Actions**: When "Monthly" is selected, generate a structured 4-week plan based on the posting frequency
-3. **Content Ideas**: Make each idea card clickable to expand into a detailed AI-generated execution plan
+Replace the multi-theme system with a single lavender/purple theme inspired by the uploaded screenshot, keep only the dark mode toggle, and remove the website URL color import from both the setup wizard and settings.
 
----
+The screenshot shows: soft lavender/purple backgrounds, light purple sidebar with a white/clean aesthetic, rounded cards, blue-purple accent colors, and a modern dashboard feel.
 
-## 1. Post Builder: Scrape Listing URL for Property Details
+## Changes
 
-**Problem**: The AI currently just receives the raw URL text but cannot visit it, so it guesses property details (often wrong).
+### 1. Replace all theme presets with one "Lavender" light + dark pair (`src/contexts/ThemeContext.tsx`)
 
-**Solution**: In the edge function, when a `listingUrl` is provided, fetch the page HTML, extract the text content, and pass it as context to the AI so it uses the real address, bedrooms, bathrooms, car parks, land area, floor area, price/sale method, and key features.
+- Replace the entire `THEMES` array with just two entries: `lavender` (light) and `dark-lavender` (dark)
+- Color values derived from the screenshot:
+  - Primary: soft blue-purple (~`260 55% 55%`)
+  - Accent: cyan/teal highlights (~`190 70% 50%`)
+  - Background: very light lavender (`260 20% 97%`)
+  - Cards: white with subtle purple tint
+  - Sidebar: light lavender (not dark) in light mode, matching the screenshot's white/purple sidebar
+  - Muted: soft purple-grey tones
+- The `toggleDarkMode` function stays as-is (switches between lavender and dark-lavender)
+- Remove `setColorFamily` since there is only one family now (simplify to just toggle)
+- Default theme becomes `lavender` instead of `teal-warm`
 
-### Edge Function Changes (`marketing-ai/index.ts`)
+### 2. Remove theme selector from sidebar (`src/components/AppSidebar.tsx`)
 
-- Before building the post prompt, if `listingUrl` is present:
-  1. Fetch the URL with a standard `fetch()` call
-  2. Extract the text content from the HTML (strip tags)
-  3. Truncate to ~4000 characters to stay within token limits
-  4. Include it in the user prompt as "Listing Page Content" for the AI to reference
-- Update the JSON output structure to also return extracted property details: `"propertyDetails": "3 bed, 2 bath, 1 car park, 450sqm land, Auction"`
-- If the fetch fails (e.g. blocked), fall back to the current behavior (just pass the URL)
+- Remove the "Theme" label and `Select` dropdown (lines 100-128)
+- Keep the dark mode toggle (Moon icon + Switch)
 
-### Frontend Changes (`Marketing.tsx`)
+### 3. Remove theme preset grid from Settings (`src/pages/Settings.tsx`)
 
-- Display `post.propertyDetails` in the output card if present, as a small info line above the hook
+- Remove the "Theme Preset" section (lines 266-280) with the 5-color grid
+- Keep: Logo upload, Custom Brand Colors, Fonts, Animations toggle
+- The brand colors override still works on top of the single lavender base
 
----
+### 4. Simplify setup wizard theme step (`src/components/setup/SetupThemeStep.tsx`)
 
-## 2. Weekly Actions: Monthly Plan with 4 Weeks
+- Remove the "Theme Base" selector (light/dark/brand buttons)
+- Remove the "Import Colors from Website" section entirely
+- Remove the `websiteUrl` field from `ThemeData`
+- Keep only: color pickers (primary, secondary, accent, background, text) for custom branding
+- Simplify to just "Pick your brand colors" with the color pickers
 
-**Problem**: Selecting "Monthly" generates the same 5-7 action items as "Weekly" -- it does not structure content across 4 weeks.
+### 5. Update QuickSetup to remove websiteUrl references (`src/components/QuickSetup.tsx`)
 
-### Edge Function Changes (`marketing-ai/index.ts`)
+- Remove `websiteUrl` from the initial `theme` state
+- Remove `website_url` from the profile and setup_state saves
+- Hardcode `active_theme: 'lavender'` on save (or `dark-lavender` if user picked dark)
 
-- In the `generate_plan` action, when `planType === "monthly"`, update:
-  - The JSON structure to use `"weeks"` containing 4 week objects, each with actions matching the posting frequency
-  - The user prompt to explicitly request: "Create a 4-week monthly plan. Each week should have actions matching the posting frequency of [frequency]. Structure as Week 1, Week 2, Week 3, Week 4."
-  - Expected JSON: `{"title":"...","summary":"...","weeks":[{"week":"Week 1","actions":[{"day":"Monday","task":"...","platform":"...","type":"...","details":"..."}]}]}`
-- Keep the weekly plan format unchanged (flat actions list)
+### 6. Update CSS variables (`src/index.css`)
 
-### Frontend Changes (`Marketing.tsx`)
+- Update the `:root` light theme variables to match the lavender palette
+- Update the `.dark` variables to match the dark lavender variant
+- Keep all the utility classes, animations, and scrollbar styles unchanged
 
-- When rendering a monthly plan, check for `generatedPlan.weeks` array
-- If present, render each week as a section with a "Week 1", "Week 2" etc. header, followed by that week's actions
-- If the plan has the old flat `actions` format, render as before (backward compatible)
+### 7. Update AppLayout setup check (`src/components/AppLayout.tsx`)
 
----
-
-## 3. Content Ideas: Click to Expand with Detailed Plan
-
-**Problem**: Generated idea cards are static and cannot be explored further.
-
-### Frontend Changes (`Marketing.tsx`)
-
-- Add state: `expandedIdeaIndex` (number or null) and `expandedIdeaDetail` (object or null), `expandingIdea` (boolean)
-- When a user clicks an idea card:
-  1. Set `expandedIdeaIndex` to that card's index
-  2. Call `callMarketingAI('expand_content_idea', { idea })` to get a detailed plan
-  3. Display the result in an expanded view below the card (or as a dialog/sheet)
-- The expanded detail includes: step-by-step execution plan, suggested copy/script outline, recommended posting schedule, content format tips, and estimated time to create
-
-### Edge Function Changes (`marketing-ai/index.ts`)
-
-- Add a new action: `expand_content_idea`
-- System prompt: master prompt + "You are a content execution planner. Given a content idea, create a detailed execution plan."
-- Expected JSON: `{"title":"...","executionSteps":["step 1","step 2",...],"copyOutline":"draft copy or script outline","schedule":"when to post","formatTips":"how to create this format","estimatedTime":"e.g. 2 hours","platforms":["..."]}`
-
----
+- Remove `themeNotSet` from `isSetupIncomplete` since there is now only one theme and it is always set
 
 ## Technical Details
 
-### Edge function: URL scraping logic
-
+**New lavender light theme CSS variables (`:root`):**
 ```text
-if (listingUrl) {
-  try {
-    const pageRes = await fetch(listingUrl, {
-      headers: { "User-Agent": "Mozilla/5.0 ..." }
-    });
-    const html = await pageRes.text();
-    // Strip HTML tags to get text content
-    const textContent = html.replace(/<[^>]*>/g, ' ')
-      .replace(/\s+/g, ' ').trim().substring(0, 4000);
-    // Append to user prompt
-    userPrompt += `\n\nListing page content (use this for accurate details):\n${textContent}`;
-  } catch (e) {
-    console.error("Failed to fetch listing URL:", e);
-    // Fall back to just URL reference
-  }
-}
+--background: 260 20% 97%
+--foreground: 240 20% 14%
+--card: 260 15% 100%
+--card-foreground: 240 20% 14%
+--primary: 260 55% 55%
+--primary-foreground: 0 0% 100%
+--secondary: 260 20% 93%
+--secondary-foreground: 240 20% 14%
+--accent: 190 70% 50%
+--accent-foreground: 0 0% 100%
+--muted: 260 15% 93%
+--muted-foreground: 240 10% 42%
+--border: 260 12% 88%
+--sidebar-background: 260 20% 95%
+--sidebar-accent: 260 18% 90%
 ```
 
-### Edge function: Monthly plan JSON structure
-
+**New dark lavender theme CSS variables (`.dark`):**
 ```text
-// For monthly plans:
-{"title":"...","summary":"...","weeks":[
-  {"week":"Week 1","theme":"...","actions":[
-    {"day":"Monday","task":"...","platform":"...","type":"...","details":"..."}
-  ]},
-  {"week":"Week 2","theme":"...","actions":[...]},
-  {"week":"Week 3","theme":"...","actions":[...]},
-  {"week":"Week 4","theme":"...","actions":[...]}
-]}
+--background: 260 20% 7%
+--foreground: 260 10% 92%
+--card: 260 18% 10%
+--primary: 260 55% 62%
+--accent: 190 70% 55%
+--muted: 260 12% 15%
+--border: 260 12% 18%
+--sidebar-background: 260 20% 5%
 ```
 
-### Edge function: New `expand_content_idea` action
-
+**THEMES array reduced to:**
 ```text
-} else if (action === "expand_content_idea") {
-  const { idea } = params;
-  systemPrompt = `${masterPrompt}
-You are a content execution planner.
-Return ONLY valid JSON:
-{"title":"...","executionSteps":["..."],"copyOutline":"...","schedule":"...","formatTips":"...","estimatedTime":"...","platforms":["..."]}`;
-  userPrompt = `Create a detailed execution plan for this content idea:
-Title: ${idea.title}
-Description: ${idea.description}
-Format: ${idea.format}
-Platforms: ${(idea.platforms || []).join(", ")}`;
-}
+THEMES = [
+  { id: 'lavender', name: 'Lavender', dark: false, pairId: 'dark-lavender', vars: {...} },
+  { id: 'dark-lavender', name: 'Dark Lavender', dark: true, pairId: 'lavender', vars: {...} },
+]
 ```
 
-### Frontend: Monthly plan rendering
-
+**Sidebar theme section becomes just:**
 ```text
-{generatedPlan.weeks ? (
-  generatedPlan.weeks.map((week) => (
-    <div key={week.week}>
-      <h4>{week.week}{week.theme ? ` - ${week.theme}` : ''}</h4>
-      {week.actions.map((item) => (
-        // existing action row rendering
-      ))}
-    </div>
-  ))
-) : (
-  // existing flat actions rendering
-)}
+<div className="flex items-center justify-between px-3 py-2">
+  <div className="flex items-center gap-2">
+    <Moon size={14} />
+    <span className="text-xs">Dark mode</span>
+  </div>
+  <Switch checked={isDark} onCheckedChange={toggleDarkMode} />
+</div>
 ```
 
-### Frontend: Expandable idea cards
+**SetupThemeStep simplified:** Remove theme base buttons, remove website URL import section, keep only color pickers with a simpler heading "Customize your brand colors".
 
-- Clicking a card sets `expandedIdeaIndex` and triggers the AI call
-- The expanded content renders below the clicked card in a highlighted panel
-- Includes a "Close" button to collapse back
-- Shows a loading spinner while the AI generates the detail
-
+**Files changed:** 6 files total (ThemeContext, AppSidebar, Settings, SetupThemeStep, QuickSetup, index.css, AppLayout)
