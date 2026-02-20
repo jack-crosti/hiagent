@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { GradientBackground } from '@/components/ui/gradient-background';
+import { TubesBackground } from '@/components/ui/neon-flow';
 import { Building2, Home, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,18 +24,7 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
   }
 
   return (
-    <GradientBackground
-      className="min-h-screen"
-      overlay
-      overlayOpacity={0.4}
-      gradients={[
-        "linear-gradient(135deg, #2d1b69 0%, #11998e 100%)",
-        "linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%)",
-        "linear-gradient(135deg, #0f3460 0%, #e94560 100%)",
-        "linear-gradient(135deg, #134e5e 0%, #71b280 100%)",
-        "linear-gradient(135deg, #2d1b69 0%, #11998e 100%)",
-      ]}
-    >
+    <TubesBackground className="min-h-screen">
       <div className="w-full max-w-lg space-y-6 animate-fade-in p-4">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
@@ -80,6 +69,6 @@ export function UserTypeSelector({ onComplete }: UserTypeSelectorProps) {
           Continue
         </Button>
       </div>
-    </GradientBackground>
+    </TubesBackground>
   );
 }
