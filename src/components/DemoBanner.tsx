@@ -1,14 +1,42 @@
 import { useDemo, TOUR_STEPS } from '@/contexts/DemoContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, ChevronRight, ChevronLeft, Eye, Info } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Eye, Info, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 export function DemoBanner() {
   const { isDemoMode, exitDemo, tourStep, setTourStep, showTour, setShowTour } = useDemo();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
+  const [clearing, setClearing] = useState(false);
 
   if (!isDemoMode) return null;
+
+  async function handleExitAndClear() {
+    if (!user) { exitDemo(); return; }
+    setClearing(true);
+    try {
+      const uid = user.id;
+      await supabase.from('deals').delete().match({ owner_user_id: uid, is_demo: true });
+      await supabase.from('transactions').delete().match({ owner_user_id: uid, is_demo: true });
+      await supabase.from('gst_periods').delete().match({ owner_user_id: uid, is_demo: true });
+      await supabase.from('goal_plans').delete().match({ owner_user_id: uid, is_demo: true });
+      await supabase.from('commission_rules').delete().match({ owner_user_id: uid, is_demo: true });
+      await supabase.from('categories').delete().match({ owner_user_id: uid, is_system: true });
+      await supabase.from('bank_accounts').delete().match({ owner_user_id: uid, is_demo: true });
+      toast({ title: 'Demo data cleared', description: 'Returned to your personal interface.' });
+    } catch (err) {
+      console.error('Clear demo error:', err);
+    }
+    setClearing(false);
+    exitDemo();
+    navigate('/');
+  }
 
   const step = TOUR_STEPS[tourStep];
 
@@ -27,6 +55,9 @@ export function DemoBanner() {
               <Info size={14} className="mr-1" /> Tour
             </Button>
           )}
+          <Button size="sm" variant="ghost" className="h-7 text-accent-foreground hover:bg-accent-foreground/10" onClick={handleExitAndClear} disabled={clearing}>
+            <Trash2 size={14} className="mr-1" /> {clearing ? 'Clearing...' : 'Exit & Clear Data'}
+          </Button>
           <Button size="sm" variant="ghost" className="h-7 text-accent-foreground hover:bg-accent-foreground/10" onClick={exitDemo}>
             <X size={14} className="mr-1" /> Exit Demo
           </Button>

@@ -202,14 +202,24 @@ export interface ScenarioResult {
 }
 
 export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
-  const { targetNetAmount, splits } = input;
+  const { targetNetAmount, splits, dealTypes } = input;
   const scenarios: ScenarioResult[] = [];
-  const userPct = splits.business_sale_user_share;
+
+  const isPropertySale = dealTypes.includes('property_sale');
+  const rule = isPropertySale ? DEFAULT_PROPERTY_SALE_RULE : DEFAULT_BUSINESS_SALE_RULE;
+  const userPct = isPropertySale ? splits.property_sale_user_share : splits.business_sale_user_share;
+  const dealTypeLabel = isPropertySale ? 'property sale' : 'business sale';
+  const dealTypeKey = isPropertySale ? 'property_sale' : 'business_sale';
   const whr = splits.withholding_rate;
   const whrLabel = `${(whr * 100).toFixed(0)}% withholding`;
 
+  // Price points per role
+  const conservativePrice = isPropertySale ? 800000 : 250000;
+  const midPrice = isPropertySale ? 1200000 : 600000;
+  const largePrice = isPropertySale ? 2500000 : 1500000;
+
   // Conservative: minimum commission deals only
-  const minGross = DEFAULT_BUSINESS_SALE_RULE.minimum_commission;
+  const minGross = rule.minimum_commission;
   const minFee = calculateOnTopFee(minGross);
   const minAfterFee = minGross - minFee;
   const minUserShare = minAfterFee * userPct;
@@ -218,21 +228,21 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
 
   scenarios.push({
     type: 'conservative',
-    deals: [{ deal_type: 'business_sale', sale_price: 250000, count: conservativeCount }],
+    deals: [{ deal_type: dealTypeKey, sale_price: conservativePrice, count: conservativeCount }],
     totalGross: minGross * conservativeCount,
     totalFees: minFee * conservativeCount,
     totalUserShare: minUserShare * conservativeCount,
     totalTax: minUserShare * whr * conservativeCount,
     totalNet: minNet * conservativeCount,
     assumptions: [
-      `${conservativeCount} deals at minimum commission ($${minGross.toLocaleString()})`,
+      `${conservativeCount} ${dealTypeLabel}s at minimum commission ($${minGross.toLocaleString()})`,
       `${(userPct * 100).toFixed(0)}/${((1 - userPct) * 100).toFixed(0)} split, fee deducted from gross`,
       whrLabel,
     ],
   });
 
-  // Realistic: mix of minimum + mid-size deals
-  const midGross = calculateTieredCommission(600000, DEFAULT_BUSINESS_SALE_RULE.tiers);
+  // Realistic: mix of mid-size + minimum deals
+  const midGross = calculateTieredCommission(midPrice, rule.tiers);
   const midFee = calculateOnTopFee(midGross);
   const midAfterFee = midGross - midFee;
   const midUserShare = midAfterFee * userPct;
@@ -245,8 +255,8 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
   scenarios.push({
     type: 'realistic',
     deals: [
-      { deal_type: 'business_sale', sale_price: 600000, count: midCount },
-      { deal_type: 'business_sale', sale_price: 250000, count: extraMinCount },
+      { deal_type: dealTypeKey, sale_price: midPrice, count: midCount },
+      { deal_type: dealTypeKey, sale_price: conservativePrice, count: extraMinCount },
     ],
     totalGross: midGross * midCount + minGross * extraMinCount,
     totalFees: midFee * midCount + minFee * extraMinCount,
@@ -254,15 +264,15 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
     totalTax: (midUserShare * midCount + minUserShare * extraMinCount) * whr,
     totalNet: midNet * midCount + minNet * extraMinCount,
     assumptions: [
-      `${midCount} deals at $600k (commission $${midGross.toLocaleString()})`,
-      `${extraMinCount} deals at minimum commission`,
+      `${midCount} ${dealTypeLabel}s at $${(midPrice / 1000).toFixed(0)}k (commission $${midGross.toLocaleString()})`,
+      `${extraMinCount} ${dealTypeLabel}s at minimum commission`,
       `${(userPct * 100).toFixed(0)}/${((1 - userPct) * 100).toFixed(0)} split, fee deducted from gross`,
       whrLabel,
     ],
   });
 
   // Aggressive: larger deals
-  const largeGross = calculateTieredCommission(1500000, DEFAULT_BUSINESS_SALE_RULE.tiers);
+  const largeGross = calculateTieredCommission(largePrice, rule.tiers);
   const largeFee = calculateOnTopFee(largeGross);
   const largeAfterFee = largeGross - largeFee;
   const largeUserShare = largeAfterFee * userPct;
@@ -271,14 +281,14 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
 
   scenarios.push({
     type: 'aggressive',
-    deals: [{ deal_type: 'business_sale', sale_price: 1500000, count: largeCount }],
+    deals: [{ deal_type: dealTypeKey, sale_price: largePrice, count: largeCount }],
     totalGross: largeGross * largeCount,
     totalFees: largeFee * largeCount,
     totalUserShare: largeUserShare * largeCount,
     totalTax: largeUserShare * whr * largeCount,
     totalNet: largeNet * largeCount,
     assumptions: [
-      `${largeCount} deals at $1.5M (commission $${largeGross.toLocaleString()})`,
+      `${largeCount} ${dealTypeLabel}s at $${(largePrice / 1000000).toFixed(1)}M (commission $${largeGross.toLocaleString()})`,
       `${(userPct * 100).toFixed(0)}/${((1 - userPct) * 100).toFixed(0)} split, fee deducted from gross`,
       whrLabel,
     ],
