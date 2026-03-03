@@ -18,6 +18,12 @@ import {
 import { Shield, Trash2, Save, Loader2, UserCircle, Upload, Paintbrush, RotateCcw, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { CommissionSettingsEditor } from '@/components/commission/CommissionSettingsEditor';
+import {
+  GlobalCommissionSettings,
+  DEFAULT_GLOBAL_COMMISSION_SETTINGS,
+  parseSettingsFromProfile,
+} from '@/services/commissionService';
 
 const FONT_OPTIONS = [
   'Plus Jakarta Sans', 'DM Sans', 'Inter', 'Manrope', 'Outfit',
@@ -41,12 +47,7 @@ export default function SettingsPage() {
     first_name: '', last_name: '', company_name: '', title: '',
     phone: '', ird_number: '', probability_threshold: '60',
   });
-  const [splits, setSplits] = useState({
-    withholding_rate: '20',
-    business_sale_user_share: '75', business_sale_company_share: '25',
-    lease_user_share: '80', lease_company_share: '20',
-    property_sale_user_share: '75', property_sale_company_share: '25',
-  });
+  const [commissionSettings, setCommissionSettings] = useState<GlobalCommissionSettings>(DEFAULT_GLOBAL_COMMISSION_SETTINGS);
   const [brand, setBrand] = useState({
     primary_color: '#2A9D8F', secondary_color: '#E9C46A', accent_color: '#E76F51',
     font_heading: 'Plus Jakarta Sans', font_body: 'DM Sans',
@@ -66,15 +67,7 @@ export default function SettingsPage() {
           phone: data.phone || '', ird_number: data.ird_number || '',
           probability_threshold: ((data.probability_threshold || 0.60) * 100).toString(),
         });
-        setSplits({
-          withholding_rate: ((data.withholding_rate ?? 0.20) * 100).toString(),
-          business_sale_user_share: ((data.business_sale_user_share ?? 0.75) * 100).toString(),
-          business_sale_company_share: ((data.business_sale_company_share ?? 0.25) * 100).toString(),
-          lease_user_share: ((data.lease_user_share ?? 0.80) * 100).toString(),
-          lease_company_share: ((data.lease_company_share ?? 0.20) * 100).toString(),
-          property_sale_user_share: ((data.property_sale_user_share ?? 0.75) * 100).toString(),
-          property_sale_company_share: ((data.property_sale_company_share ?? 0.25) * 100).toString(),
-        });
+        setCommissionSettings(parseSettingsFromProfile(data as Record<string, unknown>));
         setAnimationsEnabled(data.animations_enabled ?? true);
       }
       const b = brandRes.data;
@@ -99,13 +92,13 @@ export default function SettingsPage() {
         company_name: profile.company_name || null, title: profile.title || null,
         phone: profile.phone || null, ird_number: profile.ird_number || null,
         probability_threshold: (parseFloat(profile.probability_threshold) || 60) / 100,
-        withholding_rate: (parseFloat(splits.withholding_rate) || 20) / 100,
-        business_sale_user_share: (parseFloat(splits.business_sale_user_share) || 75) / 100,
-        business_sale_company_share: (parseFloat(splits.business_sale_company_share) || 25) / 100,
-        lease_user_share: (parseFloat(splits.lease_user_share) || 80) / 100,
-        lease_company_share: (parseFloat(splits.lease_company_share) || 20) / 100,
-        property_sale_user_share: (parseFloat(splits.property_sale_user_share) || 75) / 100,
-        property_sale_company_share: (parseFloat(splits.property_sale_company_share) || 25) / 100,
+        withholding_rate: commissionSettings.withholdingRate / 100,
+        business_sale_user_share: commissionSettings.agentSplitPct / 100,
+        business_sale_company_share: commissionSettings.companySplitPct / 100,
+        lease_user_share: commissionSettings.agentSplitPct / 100,
+        lease_company_share: commissionSettings.companySplitPct / 100,
+        property_sale_user_share: commissionSettings.agentSplitPct / 100,
+        property_sale_company_share: commissionSettings.companySplitPct / 100,
         animations_enabled: animationsEnabled,
         avatar_url: logoUrl || null,
       }).eq('owner_user_id', user.id),
@@ -167,7 +160,7 @@ export default function SettingsPage() {
     );
   }
 
-  const whrPct = splits.withholding_rate;
+  
 
   return (
     <>
@@ -182,54 +175,12 @@ export default function SettingsPage() {
               <CardTitle className="text-lg font-heading">Commission Settings</CardTitle>
             </div>
             <CardDescription>
-              Configure your splits and withholding rate. Off-the-top fee: min $1,650 or 6% of gross (no cap).
+              Configure your tiered commission structure, splits, and withholding rate.
+              These settings apply across all commission calculations in the app.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Withholding Tax Rate (%)</Label>
-              <Input type="number" min="0" max="100" value={whrPct}
-                onChange={e => setSplits(s => ({ ...s, withholding_rate: e.target.value }))} />
-              <p className="text-xs text-muted-foreground">
-                Label shown: "Less Withholding tax ({whrPct}%)"
-              </p>
-            </div>
-            <Separator />
-            {isBroker && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Business Sale — Your Share (%)</Label>
-                <Input type="number" min="0" max="100" value={splits.business_sale_user_share}
-                  onChange={e => setSplits(s => ({ ...s, business_sale_user_share: e.target.value, business_sale_company_share: (100 - (parseFloat(e.target.value) || 0)).toString() }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Company Share (%)</Label>
-                <Input type="number" disabled value={splits.business_sale_company_share} />
-              </div>
-            </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Lease — Your Share (%)</Label>
-                <Input type="number" min="0" max="100" value={splits.lease_user_share}
-                  onChange={e => setSplits(s => ({ ...s, lease_user_share: e.target.value, lease_company_share: (100 - (parseFloat(e.target.value) || 0)).toString() }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Company Share (%)</Label>
-                <Input type="number" disabled value={splits.lease_company_share} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Property Sale — Your Share (%)</Label>
-                <Input type="number" min="0" max="100" value={splits.property_sale_user_share}
-                  onChange={e => setSplits(s => ({ ...s, property_sale_user_share: e.target.value, property_sale_company_share: (100 - (parseFloat(e.target.value) || 0)).toString() }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Company Share (%)</Label>
-                <Input type="number" disabled value={splits.property_sale_company_share} />
-              </div>
-            </div>
+          <CardContent>
+            <CommissionSettingsEditor value={commissionSettings} onChange={setCommissionSettings} showPreview={true} />
           </CardContent>
         </Card>
 
