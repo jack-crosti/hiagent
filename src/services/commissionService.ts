@@ -3,6 +3,8 @@
 
 export const GST_RATE = 0.15;
 
+// ─── Legacy interfaces (kept for backward compat) ────────────────────────────
+
 export interface CommissionTier {
   threshold: number;
   rate: number;
@@ -49,6 +51,7 @@ export const DEFAULT_SPLITS: UserSplits = {
 export interface CommissionBreakdown {
   gross_commission_excl_gst: number;
   gst_on_commission: number;
+  gross_commission_incl_gst: number;
   on_top_fee: number;
   commission_after_fee: number;
   user_share_excl_gst: number;
@@ -57,10 +60,158 @@ export interface CommissionBreakdown {
   net_to_user_after_tax: number;
 }
 
+// ─── NEW: Global Commission Settings ─────────────────────────────────────────
+
+export interface GlobalTier {
+  id: string;
+  percentage: number;       // e.g. 9 for 9%
+  appliesUpTo: number | null; // null = "Balance thereafter"
+  isBalanceTherafter: boolean;
+}
+
+export interface GlobalCommissionSettings {
+  tiers: GlobalTier[];
+  applyMinimumCommission: boolean;
+  minimumCommission: number; // ex GST, default 12500
+  addGst: boolean;
+  gstRate: number;           // e.g. 15 for 15%
+  agentSplitPct: number;     // e.g. 80
+  companySplitPct: number;   // e.g. 20
+  withholdingRate: number;   // e.g. 20 (as %)
+}
+
+export const DEFAULT_GLOBAL_COMMISSION_SETTINGS: GlobalCommissionSettings = {
+  tiers: [
+    { id: '1', percentage: 9, appliesUpTo: 1000000, isBalanceTherafter: false },
+    { id: '2', percentage: 7, appliesUpTo: null, isBalanceTherafter: true },
+  ],
+  applyMinimumCommission: true,
+  minimumCommission: 12500,
+  addGst: true,
+  gstRate: 15,
+  agentSplitPct: 80,
+  companySplitPct: 20,
+  withholdingRate: 20,
+};
+
+/**
+ * Parse GlobalCommissionSettings from profile DB row.
+ * Falls back to defaults for any missing field.
+ */
+export function parseSettingsFromProfile(
+  profileData: Record<string, unknown> | null
+): GlobalCommissionSettings {
+  if (!profileData) return { ...DEFAULT_GLOBAL_COMMISSION_SETTINGS };
+
+  // If commission_settings JSON blob is stored, use it
+  const stored = profileData.commission_settings as GlobalCommissionSettings | null;
+  if (stored && stored.tiers) return stored;
+
+  // Otherwise infer from legacy split fields
+  const agentSplit = typeof profileData.lease_user_share === 'number'
+    ? Math.round(profileData.lease_user_share * 100)
+    : DEFAULT_GLOBAL_COMMISSION_SETTINGS.agentSplitPct;
+  const compSplit = 100 - agentSplit;
+  const whr = typeof profileData.withholding_rate === 'number'
+    ? Math.round(profileData.withholding_rate * 100)
+    : DEFAULT_GLOBAL_COMMISSION_SETTINGS.withholdingRate;
+
+  return {
+    ...DEFAULT_GLOBAL_COMMISSION_SETTINGS,
+    agentSplitPct: agentSplit,
+    companySplitPct: compSplit,
+    withholdingRate: whr,
+  };
+}
+
+/**
+ * Main unified commission calculation.
+ * Implements tiered → minimum → GST → off-the-top → split → withholding chain.
+ */
+export function calculateCommission(
+  salePrice: number,
+  settings: GlobalCommissionSettings
+): CommissionBreakdown {
+  const { tiers, applyMinimumCommission, minimumCommission, addGst, gstRate, agentSplitPct, companySplitPct, withholdingRate } = settings;
+
+  // 1. Tiered commission
+  let tierTotal = 0;
+  let remaining = salePrice;
+  const sortedTiers = [...tiers].sort((a, b) => {
+    if (a.isBalanceTherafter) return 1;
+    if (b.isBalanceTherafter) return -1;
+    return (a.appliesUpTo ?? Infinity) - (b.appliesUpTo ?? Infinity);
+  });
+
+  for (let i = 0; i < sortedTiers.length; i++) {
+    const tier = sortedTiers[i];
+    if (remaining <= 0) break;
+    if (tier.isBalanceTherafter) {
+      tierTotal += remaining * (tier.percentage / 100);
+      remaining = 0;
+    } else {
+      const prevCap = i > 0 && !sortedTiers[i - 1].isBalanceTherafter
+        ? (sortedTiers[i - 1].appliesUpTo ?? 0)
+        : 0;
+      const cap = tier.appliesUpTo ?? Infinity;
+      const bracket = Math.max(0, Math.min(remaining, cap - prevCap));
+      tierTotal += bracket * (tier.percentage / 100);
+      remaining -= bracket;
+    }
+  }
+
+  // 2. Minimum commission
+  let grossExGst: number;
+  if (applyMinimumCommission) {
+    grossExGst = Math.max(tierTotal, minimumCommission);
+  } else {
+    grossExGst = tierTotal;
+  }
+
+  // 3. GST
+  const gstAmount = addGst ? grossExGst * (gstRate / 100) : 0;
+  const grossIncGst = grossExGst + gstAmount;
+
+  // 4. Off-the-top fee (unchanged existing logic)
+  const fee = calculateOnTopFee(grossExGst);
+  const afterFee = Math.max(0, grossExGst - fee);
+
+  // 5. Splits
+  const agentPct = agentSplitPct / 100;
+  const compPct = companySplitPct / 100;
+  const agentShare = afterFee * agentPct;
+  const compShare = afterFee * compPct;
+
+  // 6. Withholding tax
+  const whrDecimal = withholdingRate / 100;
+  const tax = agentShare * whrDecimal;
+  const net = agentShare - tax;
+
+  return {
+    gross_commission_excl_gst: round2(grossExGst),
+    gst_on_commission: round2(gstAmount),
+    gross_commission_incl_gst: round2(grossIncGst),
+    on_top_fee: round2(fee),
+    commission_after_fee: round2(afterFee),
+    user_share_excl_gst: round2(agentShare),
+    company_share_excl_gst: round2(compShare),
+    estimated_tax: round2(tax),
+    net_to_user_after_tax: round2(net),
+  };
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+// ─── On-top fee (unchanged) ───────────────────────────────────────────────────
+
 /** Calculate on-top fee for The Network: MAX(1650, 0.06 * gross) — NO cap */
 export function calculateOnTopFee(grossCommissionExclGst: number): number {
   return Math.max(1650, 0.06 * grossCommissionExclGst);
 }
+
+// ─── Legacy helpers (still used by existing deal/scenario logic) ──────────────
 
 /** Calculate tiered commission for business/property sales */
 export function calculateTieredCommission(salePrice: number, tiers: CommissionTier[]): number {
@@ -102,7 +253,7 @@ export function getSplitsForType(dealType: string, splits: UserSplits) {
   }
 }
 
-/** Full commission breakdown for a deal */
+/** Full commission breakdown for a deal (legacy — used by deals page) */
 export function calculateDealCommission(
   deal: DealInput,
   rule: CommissionRuleConfig,
@@ -137,14 +288,15 @@ export function calculateDealCommission(
   const net = userShare - tax;
 
   return {
-    gross_commission_excl_gst: Math.round(gross * 100) / 100,
-    gst_on_commission: Math.round(gst * 100) / 100,
-    on_top_fee: Math.round(fee * 100) / 100,
-    commission_after_fee: Math.round(afterFee * 100) / 100,
-    user_share_excl_gst: Math.round(userShare * 100) / 100,
-    company_share_excl_gst: Math.round(companyShare * 100) / 100,
-    estimated_tax: Math.round(tax * 100) / 100,
-    net_to_user_after_tax: Math.round(net * 100) / 100,
+    gross_commission_excl_gst: round2(gross),
+    gst_on_commission: round2(gst),
+    gross_commission_incl_gst: round2(gross + gst),
+    on_top_fee: round2(fee),
+    commission_after_fee: round2(afterFee),
+    user_share_excl_gst: round2(userShare),
+    company_share_excl_gst: round2(companyShare),
+    estimated_tax: round2(tax),
+    net_to_user_after_tax: round2(net),
   };
 }
 
@@ -213,12 +365,10 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
   const whr = splits.withholding_rate;
   const whrLabel = `${(whr * 100).toFixed(0)}% withholding`;
 
-  // Price points per role
   const conservativePrice = isPropertySale ? 800000 : 250000;
   const midPrice = isPropertySale ? 1200000 : 600000;
   const largePrice = isPropertySale ? 2500000 : 1500000;
 
-  // Conservative: minimum commission deals only
   const minGross = rule.minimum_commission;
   const minFee = calculateOnTopFee(minGross);
   const minAfterFee = minGross - minFee;
@@ -241,7 +391,6 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
     ],
   });
 
-  // Realistic: mix of mid-size + minimum deals
   const midGross = calculateTieredCommission(midPrice, rule.tiers);
   const midFee = calculateOnTopFee(midGross);
   const midAfterFee = midGross - midFee;
@@ -271,7 +420,6 @@ export function generateScenarios(input: ScenarioInput): ScenarioResult[] {
     ],
   });
 
-  // Aggressive: larger deals
   const largeGross = calculateTieredCommission(largePrice, rule.tiers);
   const largeFee = calculateOnTopFee(largeGross);
   const largeAfterFee = largeGross - largeFee;

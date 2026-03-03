@@ -9,6 +9,10 @@ import { SetupGoalStep } from '@/components/setup/SetupGoalStep';
 import { SetupPersonalStep } from '@/components/setup/SetupPersonalStep';
 import { SetupLogoStep } from '@/components/setup/SetupLogoStep';
 import { SetupReviewStep } from '@/components/setup/SetupReviewStep';
+import {
+  GlobalCommissionSettings,
+  DEFAULT_GLOBAL_COMMISSION_SETTINGS,
+} from '@/services/commissionService';
 
 const STEP_LABELS = ['Commission', 'Goal', 'Details', 'Logo', 'Review'];
 
@@ -22,12 +26,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
   const [saving, setSaving] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
 
-  const [commission, setCommission] = useState({
-    businessSaleUser: 0.75, businessSaleCompany: 0.25,
-    leaseUser: 0.80, leaseCompany: 0.20,
-    propertyUser: 0.75, propertyCompany: 0.25,
-    withholdingRate: 0.20,
-  });
+  const [commission, setCommission] = useState<GlobalCommissionSettings>(DEFAULT_GLOBAL_COMMISSION_SETTINGS);
 
   const currentYear = new Date().getFullYear();
   const [goal, setGoal] = useState({
@@ -73,6 +72,8 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
     setSaving(true);
 
     try {
+      const agentShare = commission.agentSplitPct / 100;
+      const compShare = commission.companySplitPct / 100;
       await supabase.from('profiles').update({
         first_name: personal.firstName || null,
         last_name: personal.lastName || null,
@@ -80,13 +81,13 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         email: personal.email || null,
         company_name: personal.companyName || null,
         title: personal.title || null,
-        business_sale_user_share: commission.businessSaleUser,
-        business_sale_company_share: commission.businessSaleCompany,
-        lease_user_share: commission.leaseUser,
-        lease_company_share: commission.leaseCompany,
-        property_sale_user_share: commission.propertyUser,
-        property_sale_company_share: commission.propertyCompany,
-        withholding_rate: commission.withholdingRate,
+        business_sale_user_share: agentShare,
+        business_sale_company_share: compShare,
+        lease_user_share: agentShare,
+        lease_company_share: compShare,
+        property_sale_user_share: agentShare,
+        property_sale_company_share: compShare,
+        withholding_rate: commission.withholdingRate / 100,
         active_theme: 'lavender',
         avatar_url: activeLogo || null,
       }).eq('owner_user_id', user.id);
@@ -117,9 +118,10 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
       if (!skipped) {
         await Promise.all([
           writeAuditLog('CommissionSettingsUpdated', {
-            businessSplit: `${Math.round(commission.businessSaleUser * 100)}/${Math.round(commission.businessSaleCompany * 100)}`,
-            leaseSplit: `${Math.round(commission.leaseUser * 100)}/${Math.round(commission.leaseCompany * 100)}`,
+            agentSplit: commission.agentSplitPct,
+            companySplit: commission.companySplitPct,
             withholdingRate: commission.withholdingRate,
+            tiers: commission.tiers.length,
           }),
           writeAuditLog('GoalSet', { targetNetAmount: goal.targetNetAmount }),
           writeAuditLog('BrandingUpdated', { hasLogo: !!activeLogo, logoSkipped }),
@@ -163,7 +165,7 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
           </div>
         </div>
 
-        {step === 0 && <SetupCommissionStep data={commission} onChange={setCommission} onNext={() => setStep(1)} userType={userType} />}
+        {step === 0 && <SetupCommissionStep data={commission} onChange={setCommission} onNext={() => setStep(1)} />}
         {step === 1 && <SetupGoalStep data={goal} onChange={setGoal} onNext={() => setStep(2)} onBack={() => setStep(0)} />}
         {step === 2 && <SetupPersonalStep data={personal} onChange={setPersonal} onNext={() => setStep(3)} onBack={() => setStep(1)} userType={userType} />}
         {step === 3 && (
@@ -179,10 +181,10 @@ export function QuickSetup({ onComplete }: QuickSetupProps) {
         {step === 4 && (
           <SetupReviewStep
             data={{
-              businessSplit: `${Math.round(commission.businessSaleUser * 100)}/${Math.round(commission.businessSaleCompany * 100)}`,
-              leaseSplit: `${Math.round(commission.leaseUser * 100)}/${Math.round(commission.leaseCompany * 100)}`,
-              propertySplit: `${Math.round(commission.propertyUser * 100)}/${Math.round(commission.propertyCompany * 100)}`,
-              withholdingRate: `${Math.round(commission.withholdingRate * 100)}%`,
+              businessSplit: `${commission.agentSplitPct}/${commission.companySplitPct}`,
+              leaseSplit: `${commission.agentSplitPct}/${commission.companySplitPct}`,
+              propertySplit: `${commission.agentSplitPct}/${commission.companySplitPct}`,
+              withholdingRate: `${commission.withholdingRate}%`,
               goalAmount: goal.targetNetAmount,
               name: [personal.firstName, personal.lastName].filter(Boolean).join(' '),
               email: personal.email,
