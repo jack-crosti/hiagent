@@ -59,11 +59,22 @@ export function AppLayout({ children }: {children: ReactNode;}) {
 
   useEffect(() => {
     if (!user) return;
+
+    // Write any pending user type from the pre-login role selector
+    const pendingType = localStorage.getItem('hiagent_pending_user_type');
+    if (pendingType) {
+      supabase.from('profiles').update({ user_type: pendingType }).eq('owner_user_id', user.id).then(() => {
+        localStorage.removeItem('hiagent_pending_user_type');
+      });
+    }
+
     Promise.all([
     supabase.from('setup_state').select('is_complete, skipped').eq('owner_user_id', user.id).maybeSingle(),
     supabase.from('profiles').select('user_type, business_sale_user_share, lease_user_share, property_sale_user_share, withholding_rate, avatar_url, active_theme').eq('owner_user_id', user.id).maybeSingle()]
     ).then(([setupRes, profileRes]) => {
-      setUserType(profileRes.data?.user_type ?? null);
+      // Prefer pending type if it was just written
+      const resolvedType = pendingType ?? (profileRes.data?.user_type ?? null);
+      setUserType(resolvedType);
 
       // If setup is explicitly marked complete, honour that
       if (setupRes.data?.is_complete) {
