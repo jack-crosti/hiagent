@@ -1,74 +1,61 @@
 
-# Fix Demo Data for Real Estate Agents, Dashboard Graphs, and Demo Exit
+## Reorder Auth Flow: Role Selection First, Then Login
 
-## Problem Summary
+### Current Flow
+1. `/auth` → Login/Sign Up form (plain card page)
+2. After login → `UserTypeSelector` (the big animated TubesBackground page with broker/agent cards)
+3. After role → Setup Wizard
 
-1. **Demo deals are business-only for RE agents**: The `DemoModeCard` seeds "Cafe & Restaurant", "Automotive Workshop", and "Office Space" deals using `business_sale` and `lease` deal types regardless of user type. Real estate agents should see property listings like "3-Bed Villa - Parnell" instead.
-
-2. **Scenario engine is hardcoded to business deals**: The `generateScenarios` function in `commissionService.ts` always uses `DEFAULT_BUSINESS_SALE_RULE` with business-sale price points ($250k, $600k, $1.5M). Real estate agents should see property-sale scenarios with appropriate price points ($800k, $1.2M, $2.5M).
-
-3. **Dashboard graphs not showing**: The charts only render when `!stats.isDemo`, which checks whether any deals or transactions exist. After seeding demo data, the `IncomeExpenseChart` and `PipelineChart` should appear, but there may be a timing/state issue. Additionally, the `PipelineChart` only renders deals with `status === 'pipeline'` -- the seeded deals should have this default, but need to verify. The fix will also ensure the chart section renders reliably after data load.
-
-4. **No demo exit to clear data**: While the guided tour has an "Exit Demo" button, there is no way to clear seeded demo data and return to a clean personal interface. Users need a "Clear Demo Data" action.
-
----
-
-## Changes
-
-### 1. Role-Aware Demo Data (`src/components/dashboard/DemoModeCard.tsx`)
-
-- Import `useUserType` to detect whether user is a broker or agent.
-- Branch the seed data:
-  - **Business Broker** (current): Keep existing business-sale deals (Cafe, Workshop) and lease deals.
-  - **Real Estate Agent** (new): Seed `property_sale` deals with residential listings:
-    - "3-Bed Villa - Parnell" ($1,200,000, 70% probability)
-    - "Townhouse - Mt Eden" ($850,000, 80% probability)  
-    - "Lifestyle Block - Kumeu" ($1,800,000, 45% probability)
-  - Use `DEFAULT_PROPERTY_SALE_RULE` tiers for commission calculations.
-  - Update transaction descriptions for agents (e.g., "Commission - 42 Remuera Rd Sale" instead of "Commission - Jones Business Sale").
-- Add a **"Clear Demo Data"** button that deletes all `is_demo = true` records across tables and calls `onComplete` to refresh.
-
-### 2. Role-Aware Scenario Engine (`src/services/commissionService.ts`)
-
-- Update `generateScenarios` to accept and use `property_sale` deal types:
-  - When `dealTypes` includes `property_sale`, use `DEFAULT_PROPERTY_SALE_RULE` with property-appropriate price points:
-    - **Conservative**: $800k properties (standard residential)
-    - **Realistic**: Mix of $1.2M and $800k properties
-    - **Aggressive**: $2.5M premium properties
-  - Update assumption text to say "property sale" instead of "business sale".
-- When `dealTypes` includes `business_sale`, keep existing behavior.
-
-### 3. PersonalFinance Page Role-Aware Deal Types (`src/pages/PersonalFinance.tsx`)
-
-- Import `useUserType`.
-- Change the `dealTypes` passed to `generateScenarios`:
-  - **Broker**: `['business_sale', 'lease']` (current)
-  - **Agent**: `['property_sale']`
-
-### 4. Fix Dashboard Graphs (`src/pages/Dashboard.tsx`)
-
-- The charts are gated behind `!stats.isDemo`. After demo data is seeded, `loadStats` runs and `hasData` should become true. The fix:
-  - Ensure `loadStats` correctly detects seeded data by also checking transactions count (not just pipeline deals).
-  - Remove the strict `status=eq.pipeline` filter for the chart deals query -- fetch all non-closed deals for the pipeline chart.
-  - Always render the chart section if there are transactions OR deals (already the intent, but verify the state update triggers a re-render properly).
-
-### 5. Demo Exit with Data Cleanup (`src/components/dashboard/DemoModeCard.tsx` + `src/components/DemoBanner.tsx`)
-
-- Add an `async clearDemoData()` function in `DemoModeCard` that:
-  - Deletes from `deals`, `transactions`, `bank_accounts`, `categories`, `commission_rules`, `gst_periods`, `goal_plans` where `is_demo = true` and `owner_user_id = userId`.
-  - Calls `onComplete` to refresh the dashboard.
-  - Shows a toast confirmation.
-- In `DemoBanner.tsx`, update the "Exit Demo" button to also offer clearing demo data when the user exits the guided tour (if demo data exists).
-- Add a persistent "Clear Demo Data" option on the dashboard `DemoModeCard` area that appears when demo data is detected (post-seed).
+### New Flow
+1. `/auth` → Role selection screen (the big animated TubesBackground page — "HiAgent" title, broker/agent cards)
+2. After selecting role → Login/Sign Up form (same card, but now styled on top of the TubesBackground, with a "Back" option)
+3. After login → The selected `user_type` is saved to the profile → Setup Wizard
 
 ---
 
-## Files Modified (5)
+### Implementation Plan
+
+**1. Refactor `src/pages/Auth.tsx`**
+
+Introduce a two-step local state machine:
+- `step: 'role' | 'auth'` — starts at `'role'`
+- `pendingUserType: string | null` — stores the selection before signup
+
+**Step 1 — Role screen** (replaces current plain auth page):
+- Render the full `TubesBackground` with the big "HiAgent" title
+- Show the two role cards (Business Broker / Real Estate Agent)
+- "Continue" button advances to `step = 'auth'`
+- Existing users who already have an account can still use "Sign In" — only Sign Up needs the role stored. For Sign In, the role is already saved in the DB, so we skip storing it again.
+
+**Step 2 — Auth screen**:
+- Render the Sign In / Sign Up tabs on top of `TubesBackground` (same animated background for visual continuity)
+- Show a `← Back` button to return to role selection
+- On Sign Up success: save `pendingUserType` to `localStorage` so it survives email verification redirect
+- The `AppLayout` reads `pendingUserType` from `localStorage` after signup and writes it to the profile, clearing the stored value
+
+**2. Refactor `src/components/UserTypeSelector.tsx`**
+
+Since role selection now happens before login, this component is no longer needed as a post-login gate. It can be removed or kept only as a fallback for existing accounts that have no `user_type` set yet (important for backwards compatibility).
+
+**3. `AppLayout` — save pending user type after signup**
+
+After a new user logs in for the first time, `AppLayout` checks if `localStorage` has a `pendingUserType` key. If so, it writes it to the profile and clears the key. This handles the email-verification redirect case where the user is bounced back to the app.
+
+---
+
+### Key Decisions
+
+- **Sign In flow**: Role selection is shown but not re-saved (they already have one). The "Continue" on the role step just advances to the login form. If they sign in, their existing DB role is used as normal.
+- **Sign Up flow**: The selected role is stored in `localStorage` under `hiagent_pending_user_type`, then written to the profile in `AppLayout` once the user is authenticated.
+- **Back compat**: `UserTypeSelector` stays as a fallback for any existing user with `user_type = null` in the DB.
+- **Visual consistency**: Both steps render inside `TubesBackground` so the transition feels seamless.
+
+---
+
+### Files Changed
 
 | File | Change |
 |---|---|
-| `src/components/dashboard/DemoModeCard.tsx` | Role-aware seed data + clear demo data button |
-| `src/services/commissionService.ts` | Role-aware `generateScenarios` with property sale support |
-| `src/pages/PersonalFinance.tsx` | Pass role-aware deal types to scenarios |
-| `src/pages/Dashboard.tsx` | Fix chart visibility after demo seed |
-| `src/components/DemoBanner.tsx` | Add "Clear Demo Data" option to exit flow |
+| `src/pages/Auth.tsx` | Add `step` state; render role-selector UI on step 1, auth form on step 2; pass `pendingUserType` to `SignUpForm` |
+| `src/components/AppLayout.tsx` | On load, check `localStorage` for `hiagent_pending_user_type`; if present, write to profile and clear |
+| `src/components/UserTypeSelector.tsx` | Keep as-is (fallback for existing accounts with no role) |
